@@ -18,8 +18,8 @@
         "配置缺失时使用默认值",
         "配置格式错误时给出明确提示"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T15:20:00Z"
     },
     {
       "id": "F002",
