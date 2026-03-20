@@ -37,8 +37,8 @@
         "达到限制时返回 false",
         "计数器按分钟/天自动重置"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T15:35:00Z"
     },
     {
       "id": "F003",
