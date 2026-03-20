@@ -96,8 +96,8 @@
         "达到最大重试次数后返回错误",
         "正确标记源的失败计数"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T15:55:00Z"
     },
     {
       "id": "F006",
