@@ -152,8 +152,8 @@
         "能够手动启用/禁用源",
         "能够重置源状态"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T16:40:00Z"
     },
     {
       "id": "F009",
