@@ -57,8 +57,8 @@
         "冷却结束后自动恢复",
         "支持模型名称映射"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T15:25:00Z"
     },
     {
       "id": "F004",
