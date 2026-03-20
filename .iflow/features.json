@@ -188,8 +188,8 @@
         "支持不同日志级别",
         "日志写入文件"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T17:10:00Z"
     }
   ]
 }
