@@ -1,0 +1,195 @@
+{
+  "projectName": "APIFriend",
+  "description": "API 中转路由服务，支持多源管理、自动故障切换、统一入口",
+  "createdAt": "2026-03-20T15:05:00Z",
+  "features": [
+    {
+      "id": "F001",
+      "category": "core",
+      "description": "配置文件加载与验证",
+      "priority": "high",
+      "steps": [
+        "创建 config.example.json 示例文件",
+        "实现 config.js 配置加载模块",
+        "添加配置验证逻辑"
+      ],
+      "acceptanceCriteria": [
+        "能够加载 config.json 文件",
+        "配置缺失时使用默认值",
+        "配置格式错误时给出明确提示"
+      ],
+      "status": "pending",
+      "completedAt": null
+    },
+    {
+      "id": "F002",
+      "category": "core",
+      "description": "限流器 (RateLimiter)",
+      "priority": "high",
+      "steps": [
+        "实现请求计数 (RPM/RPD)",
+        "实现 Token 计数 (TPM/TPD)",
+        "实现计数器自动重置",
+        "提供 checkAndIncrement 方法"
+      ],
+      "acceptanceCriteria": [
+        "能够追踪每个源的请求数和 Token 数",
+        "达到限制时返回 false",
+        "计数器按分钟/天自动重置"
+      ],
+      "status": "pending",
+      "completedAt": null
+    },
+    {
+      "id": "F003",
+      "category": "core",
+      "description": "源管理器 (SourceManager)",
+      "priority": "high",
+      "steps": [
+        "实现源状态管理 (enabled/cooling/disabled)",
+        "实现源选择逻辑 (优先级 + 可用性)",
+        "实现冷却机制",
+        "实现模型映射逻辑"
+      ],
+      "acceptanceCriteria": [
+        "能够选择最高优先级的可用源",
+        "连续失败达到阈值时进入冷却",
+        "冷却结束后自动恢复",
+        "支持模型名称映射"
+      ],
+      "status": "pending",
+      "completedAt": null
+    },
+    {
+      "id": "F004",
+      "category": "core",
+      "description": "代理核心 (Proxy)",
+      "priority": "high",
+      "steps": [
+        "实现请求转发逻辑",
+        "实现请求头转换 (Authorization)",
+        "实现流式响应透传",
+        "实现超时控制"
+      ],
+      "acceptanceCriteria": [
+        "能够转发请求到目标源",
+        "正确设置 API Key",
+        "支持流式响应 (SSE)",
+        "超时后自动切换源"
+      ],
+      "status": "pending",
+      "completedAt": null
+    },
+    {
+      "id": "F005",
+      "category": "core",
+      "description": "故障检测与自动切换",
+      "priority": "high",
+      "steps": [
+        "检测 429/5xx 错误",
+        "检测超时错误",
+        "实现重试逻辑",
+        "标记源失败状态"
+      ],
+      "acceptanceCriteria": [
+        "请求失败时自动切换下一个源",
+        "达到最大重试次数后返回错误",
+        "正确标记源的失败计数"
+      ],
+      "status": "pending",
+      "completedAt": null
+    },
+    {
+      "id": "F006",
+      "category": "core",
+      "description": "流式输出错误处理",
+      "priority": "high",
+      "steps": [
+        "检测流式传输中断",
+        "向客户端注入 SSE 错误事件",
+        "记录中断日志"
+      ],
+      "acceptanceCriteria": [
+        "流式中断时发送错误事件给客户端",
+        "客户端能正常结束当前生成"
+      ],
+      "status": "pending",
+      "completedAt": null
+    },
+    {
+      "id": "F007",
+      "category": "core",
+      "description": "状态持久化",
+      "priority": "medium",
+      "steps": [
+        "实现状态导出/导入",
+        "实现定时持久化",
+        "实现退出时保存",
+        "实现关键事件立即持久化"
+      ],
+      "acceptanceCriteria": [
+        "重启后恢复状态",
+        "冷却状态不丢失",
+        "限流计数不丢失"
+      ],
+      "status": "pending",
+      "completedAt": null
+    },
+    {
+      "id": "F008",
+      "category": "api",
+      "description": "管理 API 接口",
+      "priority": "medium",
+      "steps": [
+        "实现 GET /admin/sources",
+        "实现 GET /admin/sources/:name",
+        "实现 POST /admin/sources/:name/enable",
+        "实现 POST /admin/sources/:name/disable",
+        "实现 POST /admin/sources/:name/reset"
+      ],
+      "acceptanceCriteria": [
+        "能够查看所有源状态",
+        "能够手动启用/禁用源",
+        "能够重置源状态"
+      ],
+      "status": "pending",
+      "completedAt": null
+    },
+    {
+      "id": "F009",
+      "category": "security",
+      "description": "安全认证中间件",
+      "priority": "medium",
+      "steps": [
+        "实现 proxyApiKey 验证",
+        "实现认证中间件",
+        "支持多种认证头格式"
+      ],
+      "acceptanceCriteria": [
+        "未配置 proxyApiKey 时跳过验证",
+        "配置后必须携带正确的 key",
+        "支持 Authorization 和 x-proxy-key 头"
+      ],
+      "status": "pending",
+      "completedAt": null
+    },
+    {
+      "id": "F010",
+      "category": "core",
+      "description": "日志系统",
+      "priority": "low",
+      "steps": [
+        "实现日志写入",
+        "实现日志级别控制",
+        "实现请求日志记录"
+      ],
+      "acceptanceCriteria": [
+        "能够记录请求和错误日志",
+        "支持不同日志级别",
+        "日志写入文件"
+      ],
+      "status": "pending",
+      "completedAt": null
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Runtime state
+.state.json
+
+# Logs
+logs/
+*.log
+
+# User config (contains API keys)
+config.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
