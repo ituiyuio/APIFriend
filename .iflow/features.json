@@ -113,8 +113,8 @@
         "流式中断时发送错误事件给客户端",
         "客户端能正常结束当前生成"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T16:10:00Z"
     },
     {
       "id": "F007",
