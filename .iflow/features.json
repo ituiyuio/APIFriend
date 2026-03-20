@@ -77,8 +77,8 @@
         "支持流式响应 (SSE)",
         "超时后自动切换源"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T15:40:00Z"
     },
     {
       "id": "F005",
