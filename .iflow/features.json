@@ -99,8 +99,8 @@
         "代理功能可用",
         "管理 API 可用"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T17:30:00Z"
     },
     {
       "id": "F012",
@@ -117,8 +117,8 @@
         "故障切换正常触发",
         "管理 API 返回正确数据"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T17:40:00Z"
     },
     {
       "id": "F013",
