@@ -134,8 +134,8 @@
         "config.json 包含有效的 API 源",
         "服务能加载配置启动"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T17:45:00Z"
     }
   ]
 }
