@@ -170,8 +170,8 @@
         "配置后必须携带正确的 key",
         "支持 Authorization 和 x-proxy-key 头"
       ],
-      "status": "pending",
-      "completedAt": null
+      "status": "completed",
+      "completedAt": "2026-03-20T16:55:00Z"
     },
     {
       "id": "F010",
