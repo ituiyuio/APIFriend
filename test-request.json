@@ -1,0 +1,7 @@
+{
+  "model": "default",
+  "messages": [
+    {"role": "user", "content": "Say hi"}
+  ],
+  "max_tokens": 10
+}

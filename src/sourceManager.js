@@ -324,6 +324,7 @@ class SourceManager extends EventEmitter {
     state.stats.successCount++;
     state.stats.lastSuccess = new Date().toISOString();
     state.stats.consecutiveFailures = 0;
+    state.stats.lastError = null; // 成功后清除错误信息
     
     // 如果在冷却中且成功，可以提前恢复
     if (state.status === SourceStatus.COOLING) {
