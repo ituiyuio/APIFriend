@@ -69,21 +69,65 @@ class SourceManager extends EventEmitter {
     });
   }
 
-  /**
-   * 获取源配置
-   * @param {string} name - 源名称
-   * @returns {Object|null} 源配置
-   */
-  getSource(name) {
-    return this.sources.get(name) || null;
-  }
+    /**
 
-  /**
-   * 获取源状态
-   * @param {string} name - 源名称
-   * @returns {Object|null} 源状态
-   */
-  getState(name) {
+     * 获取源配置
+
+     * @param {string} name - 源名称
+
+     * @returns {Object|null} 源配置
+
+     */
+
+    getSource(name) {
+
+      return this.sources.get(name) || null;
+
+    }
+
+  
+
+    /**
+
+     * 移除源
+
+     * @param {string} name - 源名称
+
+     * @returns {boolean} 是否成功
+
+     */
+
+    removeSource(name) {
+
+      if (!this.sources.has(name)) return false;
+
+      
+
+      this.sources.delete(name);
+
+      this.states.delete(name);
+
+      
+
+      this.emit('source_removed', { name });
+
+      return true;
+
+    }
+
+  
+
+    /**
+
+     * 获取源状态
+
+     * @param {string} name - 源名称
+
+     * @returns {Object|null} 源状态
+
+     */
+
+    getState(name) {
     return this.states.get(name) || null;
   }
 

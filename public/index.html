@@ -609,6 +609,154 @@
         grid-template-columns: repeat(2, 1fr);
       }
     }
+
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.3s ease;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-glass);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--bg-glass);
+      border-radius: 10px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .form-label .required {
+      color: var(--accent-red);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.1);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 12px;
+      padding: 20px 24px;
+      border-top: 1px solid var(--border-glass);
+    }
+
+    .modal-footer .btn {
+      flex: 1;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--accent-red);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
   </style>
 </head>
 <body>
@@ -625,10 +773,13 @@
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <span>+</span> 添加 API 源
+        </button>
         <button class="btn btn-secondary" onclick="refreshAll()">
           <span>🔄</span> 刷新
         </button>
-        <button class="btn btn-primary" onclick="resetAll()">
+        <button class="btn btn-secondary" onclick="resetAll()">
           <span>↻</span> 重置统计
         </button>
       </div>
@@ -712,6 +863,62 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-title">添加 API 源</span>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <form id="source-form" onsubmit="event.preventDefault(); saveSource();">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">源名称 <span class="required">*</span></label>
+            <input type="text" class="form-input" id="source-name" placeholder="例如: openrouter-free" required>
+            <div class="form-hint">唯一标识符，创建后不可修改</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Base URL <span class="required">*</span></label>
+            <input type="text" class="form-input" id="source-baseurl" placeholder="例如: https://api.openai.com/v1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">API Key</label>
+            <input type="password" class="form-input" id="source-apikey" placeholder="sk-xxxxx">
+            <div class="form-hint">编辑时留空表示保持不变</div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">优先级</label>
+              <input type="number" class="form-input" id="source-priority" value="100" min="1" max="999">
+              <div class="form-hint">数字越小优先级越高</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">默认模型</label>
+              <input type="text" class="form-input" id="source-model" placeholder="例如: gpt-4">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">RPM (请求/分钟)</label>
+              <input type="number" class="form-input" id="source-rpm" placeholder="例如: 60" min="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">TPM (Token/分钟)</label>
+              <input type="number" class="form-input" id="source-tpm" placeholder="例如: 10000" min="1">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" id="delete-btn" onclick="deleteSource()" style="display: none;">
+            删除源
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -877,6 +1084,9 @@
             </div>
 
             <div class="source-actions">
+              <button class="action-btn" onclick='openEditModal(${JSON.stringify(source)})'>
+                ✏ 编辑
+              </button>
               <button class="action-btn" onclick="toggleSource('${source.name}', ${source.enabled})">
                 ${source.enabled ? '⏸ 禁用' : '▶ 启用'}
               </button>
@@ -1045,6 +1255,124 @@
       document.getElementById('uptime').textContent = 
         `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }, 1000);
+
+    // Modal functions
+    function openAddModal() {
+      document.getElementById('modal-title').textContent = '添加 API 源';
+      document.getElementById('source-form').reset();
+      document.getElementById('source-name').removeAttribute('readonly');
+      document.getElementById('delete-btn').style.display = 'none';
+      document.getElementById('modal-overlay').classList.add('active');
+    }
+
+    function openEditModal(source) {
+      document.getElementById('modal-title').textContent = '编辑 API 源';
+      document.getElementById('source-name').value = source.name;
+      document.getElementById('source-name').setAttribute('readonly', 'readonly');
+      document.getElementById('source-baseurl').value = source.baseUrl;
+      document.getElementById('source-apikey').value = '';
+      document.getElementById('source-priority').value = source.priority || 100;
+      document.getElementById('source-rpm').value = source.rateLimit?.config?.requestsPerMinute || '';
+      document.getElementById('source-tpm').value = source.rateLimit?.config?.tokensPerMinute || '';
+      document.getElementById('source-model').value = source.modelMapping?.default || '';
+      document.getElementById('delete-btn').style.display = 'block';
+      document.getElementById('modal-overlay').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('active');
+    }
+
+    // Close modal on overlay click
+    document.getElementById('modal-overlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+
+    // Save source
+    async function saveSource() {
+      const name = document.getElementById('source-name').value.trim();
+      const baseUrl = document.getElementById('source-baseurl').value.trim();
+      const apiKey = document.getElementById('source-apikey').value.trim();
+      const priority = parseInt(document.getElementById('source-priority').value) || 100;
+      const rpm = parseInt(document.getElementById('source-rpm').value) || null;
+      const tpm = parseInt(document.getElementById('source-tpm').value) || null;
+      const model = document.getElementById('source-model').value.trim();
+
+      if (!name || !baseUrl) {
+        showToast('error', '请填写源名称和 Base URL');
+        return;
+      }
+
+      const isNew = !document.getElementById('source-name').hasAttribute('readonly');
+      const url = isNew ? `${API_BASE}/sources` : `${API_BASE}/sources/${name}`;
+      const method = isNew ? 'POST' : 'PATCH';
+
+      const body = isNew ? {
+        name,
+        baseUrl,
+        apiKey: apiKey || undefined,
+        priority,
+        rateLimit: {
+          requestsPerMinute: rpm,
+          tokensPerMinute: tpm
+        },
+        modelMapping: model ? { default: model } : {}
+      } : {
+        priority,
+        rateLimit: {
+          requestsPerMinute: rpm,
+          tokensPerMinute: tpm
+        },
+        modelMapping: model ? { default: model } : {}
+      };
+
+      // If apiKey provided for existing source, need to update config
+      if (!isNew && apiKey) {
+        body.apiKey = apiKey;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', isNew ? '源已创建' : '源已更新');
+          closeModal();
+          fetchSources();
+          addLog('info', `${isNew ? '创建' : '更新'}源: ${name}`);
+        } else {
+          showToast('error', data.error || '操作失败');
+        }
+      } catch (err) {
+        showToast('error', '操作失败: ' + err.message);
+      }
+    }
+
+    // Delete source
+    async function deleteSource() {
+      const name = document.getElementById('source-name').value;
+      if (!confirm(`确定要删除源 "${name}" 吗？此操作不可恢复。`)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/sources/${name}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+          showToast('success', '源已删除');
+          closeModal();
+          fetchSources();
+          addLog('info', `删除源: ${name}`);
+        } else {
+          showToast('error', data.error || '删除失败');
+        }
+      } catch (err) {
+        showToast('error', '删除失败: ' + err.message);
+      }
+    }
   </script>
 </body>
 </html>

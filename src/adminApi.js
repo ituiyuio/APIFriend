@@ -113,6 +113,123 @@ function createAdminRouter(options = {}) {
   });
   
   /**
+   * POST /admin/sources
+   * 创建新源
+   */
+  router.post('/sources', async (req, res) => {
+    try {
+      const { name, baseUrl, apiKey, priority, enabled, rateLimit, modelMapping, modelMappingStrict } = req.body;
+      
+      // 验证必填字段
+      if (!name || !baseUrl || !apiKey) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required fields: name, baseUrl, apiKey'
+        });
+      }
+      
+      // 检查源是否已存在
+      const existing = sourceManager?.getSource(name);
+      if (existing) {
+        return res.status(409).json({
+          success: false,
+          error: `Source '${name}' already exists`
+        });
+      }
+      
+      // 创建源配置
+      const sourceConfig = {
+        name,
+        baseUrl,
+        apiKey,
+        priority: priority ?? 100,
+        enabled: enabled ?? true,
+        rateLimit: rateLimit || {},
+        modelMapping: modelMapping || {},
+        modelMappingStrict: modelMappingStrict ?? false
+      };
+      
+      // 添加源
+      const added = sourceManager?.addSource(sourceConfig);
+      
+      if (!added) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to add source'
+        });
+      }
+      
+      // 触发状态持久化
+      if (statePersistence) {
+        await statePersistence.save(true);
+      }
+      
+      onLog('info', `Source created: ${name}`);
+      
+      res.status(201).json({
+        success: true,
+        message: `Source '${name}' created`,
+        data: sourceManager?.getSourceSummary(name)
+      });
+    } catch (err) {
+      onLog('error', `Failed to create source: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  /**
+   * DELETE /admin/sources/:name
+   * 删除源
+   */
+  router.delete('/sources/:name', async (req, res) => {
+    try {
+      const { name } = req.params;
+      
+      const source = sourceManager?.getSource(name);
+      if (!source) {
+        return res.status(404).json({
+          success: false,
+          error: 'Source not found'
+        });
+      }
+      
+      // 删除源
+      const removed = sourceManager?.removeSource(name);
+      
+      if (!removed) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to remove source'
+        });
+      }
+      
+      // 清理限流器
+      rateLimiter?.reset(name);
+      
+      // 触发状态持久化
+      if (statePersistence) {
+        await statePersistence.save(true);
+      }
+      
+      onLog('info', `Source deleted: ${name}`);
+      
+      res.json({
+        success: true,
+        message: `Source '${name}' deleted`
+      });
+    } catch (err) {
+      onLog('error', `Failed to delete source: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  /**
    * POST /admin/sources/:name/enable
    * 启用源
    */
