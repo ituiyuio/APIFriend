@@ -13,6 +13,7 @@ const { SourceManager, SourceStatus } = require('./src/sourceManager');
 const { Proxy } = require('./src/proxy');
 const { FailoverDetector } = require('./src/failover');
 const { StreamErrorHandler } = require('./src/streamErrorHandler');
+const { StatsRecorder } = require('./src/statsRecorder');
 const { 
   StatePersistence, 
   createSourceManagerProvider, 
@@ -50,6 +51,7 @@ class APIFriendApp {
     this.failoverDetector = null;
     this.streamErrorHandler = null;
     this.statePersistence = null;
+    this.statsRecorder = null;
     
     // Express
     this.app = null;
@@ -95,21 +97,28 @@ class APIFriendApp {
       sourceCount: this.config.sources.length
     });
     
-    // 5. 初始化代理核心
-    this.proxy = new Proxy(this.config, this.rateLimiter);
+    // 5. 初始化统计记录器
+    this.statsRecorder = new StatsRecorder({
+      maxHours: 24,
+      maxDays: 30
+    });
+    this.logger.debug('StatsRecorder initialized');
+    
+    // 6. 初始化代理核心
+    this.proxy = new Proxy(this.config, this.rateLimiter, this.statsRecorder);
     this.logger.debug('Proxy initialized');
     
-    // 6. 初始化故障检测器
+    // 7. 初始化故障检测器
     this.failoverDetector = new FailoverDetector(this.config);
     this.logger.debug('FailoverDetector initialized');
     
-    // 7. 初始化流式错误处理器
+    // 8. 初始化流式错误处理器
     this.streamErrorHandler = new StreamErrorHandler({
       onLog: (level, msg, data) => this.logger[level](msg, data)
     });
     this.logger.debug('StreamErrorHandler initialized');
     
-    // 8. 初始化状态持久化
+    // 9. 初始化状态持久化
     if (this.config.persistence?.enabled !== false) {
       this.statePersistence = new StatePersistence({
         file: this.config.persistence?.file || '.state.json',
@@ -224,6 +233,7 @@ class APIFriendApp {
       rateLimiter: this.rateLimiter,
       failoverDetector: this.failoverDetector,
       statePersistence: this.statePersistence,
+      statsRecorder: this.statsRecorder,
       config: this.config,
       onLog: (level, msg, data) => this.logger[level](msg, data)
     }));

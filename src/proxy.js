@@ -130,14 +130,16 @@ class Proxy {
    * @param {Object} config - 配置对象
    * @param {Object} config.failover - 故障切换配置
    * @param {Object} rateLimiter - 限流器实例（可选，用于Token统计）
+   * @param {Object} statsRecorder - 统计记录器实例（可选，用于历史统计）
    */
-  constructor(config = {}, rateLimiter = null) {
+  constructor(config = {}, rateLimiter = null, statsRecorder = null) {
     this.failoverConfig = config.failover || {
       timeoutMs: 15000,
       maxRetries: 3,
       retryDelayMs: 1000
     };
     this.rateLimiter = rateLimiter;
+    this.statsRecorder = statsRecorder;
   }
 
   /**
@@ -344,6 +346,16 @@ class Proxy {
         // 成功
         sourceManager.markSuccess(currentSource.source.name);
         
+        // 记录统计
+        if (this.statsRecorder) {
+          this.statsRecorder.recordRequest({
+            source: currentSource.source.name,
+            success: true,
+            tokens: 0,  // 流式响应中会在回调中更新
+            latency: 0  // 可以在后续添加
+          });
+        }
+        
         // 如果提供了客户端响应对象，透传响应
         if (clientResponse && result.response) {
           if (result.isStream) {
@@ -371,6 +383,14 @@ class Proxy {
       
       // 失败，标记并尝试切换源
       sourceManager.markFailure(currentSource.source.name, result.errorType);
+      
+      // 记录失败统计
+      if (this.statsRecorder) {
+        this.statsRecorder.recordRequest({
+          source: currentSource.source.name,
+          success: false
+        });
+      }
       
       // 检查是否应该重试
       if (result.errorType === 'auth_error') {

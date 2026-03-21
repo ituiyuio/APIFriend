@@ -818,6 +818,17 @@
       </div>
     </div>
 
+    <!-- Request Trends Chart -->
+    <div class="panel" style="margin-bottom: 24px;">
+      <div class="panel-header">
+        <span class="panel-title">📊 请求趋势（最近24小时）</span>
+        <span class="panel-badge" id="chart-requests">0 请求</span>
+      </div>
+      <div class="panel-content" style="padding: 20px;">
+        <canvas id="trend-chart" height="120"></canvas>
+      </div>
+    </div>
+
     <!-- Main Content -->
     <div class="main-grid">
       <!-- Sources Panel -->
@@ -954,7 +965,8 @@
       await Promise.all([
         fetchStats(),
         fetchSources(),
-        fetchHealth()
+        fetchHealth(),
+        fetchStatsHistory()
       ]);
       addLog('info', '数据已刷新');
     }
@@ -1391,6 +1403,140 @@
         showToast('error', '删除失败: ' + err.message);
       }
     }
+
+    // ====== 趋势图表 ======
+    let chartData = null;
+    
+    // 获取历史统计
+    async function fetchStatsHistory() {
+      try {
+        const res = await fetch(`${API_BASE}/stats/history?hours=24`);
+        const data = await res.json();
+        
+        if (data.success) {
+          chartData = data.data;
+          renderTrendChart(data.data.hourly);
+          updateChartSummary(data.data.summary);
+        }
+      } catch (err) {
+        console.error('Failed to fetch stats history:', err);
+      }
+    }
+    
+    // 更新图表摘要
+    function updateChartSummary(summary) {
+      if (summary && summary.today) {
+        document.getElementById('chart-requests').textContent = `${summary.today.requests} 今日请求`;
+      }
+    }
+    
+    // 渲染趋势图表
+    function renderTrendChart(hourlyData) {
+      const canvas = document.getElementById('trend-chart');
+      const ctx = canvas.getContext('2d');
+      
+      // 高清屏适配
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      const width = rect.width;
+      const height = rect.height;
+      const padding = { top: 20, right: 20, bottom: 30, left: 50 };
+      const chartWidth = width - padding.left - padding.right;
+      const chartHeight = height - padding.top - padding.bottom;
+      
+      // 清空画布
+      ctx.clearRect(0, 0, width, height);
+      
+      if (!hourlyData || hourlyData.length === 0) {
+        ctx.fillStyle = '#555';
+        ctx.font = '14px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无数据', width / 2, height / 2);
+        return;
+      }
+      
+      // 计算最大值
+      const maxRequests = Math.max(...hourlyData.map(d => d.totalRequests || 0), 1);
+      
+      // 绘制网格线
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (chartHeight / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(width - padding.right, y);
+        ctx.stroke();
+        
+        // Y轴标签
+        const value = Math.round(maxRequests * (1 - i / 4));
+        ctx.fillStyle = '#555';
+        ctx.font = '10px JetBrains Mono';
+        ctx.textAlign = 'right';
+        ctx.fillText(value.toString(), padding.left - 8, y + 3);
+      }
+      
+      // 绘制面积图
+      const barWidth = chartWidth / hourlyData.length;
+      
+      // 渐变填充
+      const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+      gradient.addColorStop(0, 'rgba(79, 140, 255, 0.3)');
+      gradient.addColorStop(1, 'rgba(79, 140, 255, 0.02)');
+      
+      ctx.beginPath();
+      ctx.moveTo(padding.left, height - padding.bottom);
+      
+      hourlyData.forEach((d, i) => {
+        const x = padding.left + i * barWidth + barWidth / 2;
+        const y = height - padding.bottom - ((d.totalRequests || 0) / maxRequests) * chartHeight;
+        
+        if (i === 0) {
+          ctx.lineTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      
+      ctx.lineTo(padding.left + chartWidth, height - padding.bottom);
+      ctx.closePath();
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      
+      // 绘制线条
+      ctx.beginPath();
+      hourlyData.forEach((d, i) => {
+        const x = padding.left + i * barWidth + barWidth / 2;
+        const y = height - padding.bottom - ((d.totalRequests || 0) / maxRequests) * chartHeight;
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      });
+      ctx.strokeStyle = '#4f8cff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // X轴标签（每4小时显示一个）
+      ctx.fillStyle = '#555';
+      ctx.font = '10px JetBrains Mono';
+      ctx.textAlign = 'center';
+      hourlyData.forEach((d, i) => {
+        if (i % 4 === 0 || i === hourlyData.length - 1) {
+          const x = padding.left + i * barWidth + barWidth / 2;
+          ctx.fillText(`${d.hour}:00`, x, height - 8);
+        }
+      });
+    }
+    
+    // 定期刷新图表
+    setInterval(fetchStatsHistory, 30000);  // 每30秒刷新
   </script>
 </body>
 </html>

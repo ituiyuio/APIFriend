@@ -12,6 +12,7 @@ const express = require('express');
  * @param {Object} options.rateLimiter - 限流器实例
  * @param {Object} options.failoverDetector - 故障检测器实例
  * @param {Object} options.statePersistence - 状态持久化实例
+ * @param {Object} options.statsRecorder - 统计记录器实例
  * @param {Object} options.config - 配置对象
  * @param {Function} options.onLog - 日志回调
  * @returns {express.Router} Express 路由
@@ -23,6 +24,7 @@ function createAdminRouter(options = {}) {
     rateLimiter,
     failoverDetector,
     statePersistence,
+    statsRecorder,
     config,
     onLog = console.log
   } = options;
@@ -541,6 +543,32 @@ function createAdminRouter(options = {}) {
       });
     } catch (err) {
       onLog('error', `Failed to get config: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  /**
+   * GET /admin/stats/history
+   * 获取历史统计数据
+   */
+  router.get('/stats/history', (req, res) => {
+    try {
+      const hours = parseInt(req.query.hours) || 24;
+      const days = parseInt(req.query.days) || 7;
+      
+      res.json({
+        success: true,
+        data: {
+          hourly: statsRecorder?.getHourlyStats(hours) || [],
+          daily: statsRecorder?.getDailyStats(days) || [],
+          summary: statsRecorder?.getSummary() || {}
+        }
+      });
+    } catch (err) {
+      onLog('error', `Failed to get stats history: ${err.message}`);
       res.status(500).json({
         success: false,
         error: err.message
