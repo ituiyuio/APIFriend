@@ -1044,6 +1044,9 @@
         `;
         return;
       }
+      
+      // 按优先级升序排序（数字越小越靠前）
+      sources.sort((a, b) => (a.priority || 999) - (b.priority || 999));
 
       container.innerHTML = sources.map(source => {
         const statusClass = `status-${source.status}`;
