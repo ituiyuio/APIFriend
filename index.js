@@ -7,7 +7,7 @@ const express = require('express');
 const http = require('http');
 
 // 导入模块
-const { loadConfig, validateConfig, DEFAULT_CONFIG } = require('./src/config');
+const { loadConfig, validateConfig, DEFAULT_CONFIG, watchConfig } = require('./src/config');
 const { RateLimiter } = require('./src/rateLimiter');
 const { SourceManager, SourceStatus } = require('./src/sourceManager');
 const { Proxy } = require('./src/proxy');
@@ -177,6 +177,17 @@ class APIFriendApp {
     
     this.sourceManager.on('cooldown_exited', ({ source }) => {
       this.logger.info('Source exited cooldown', { source });
+    });
+    
+    // 监听配置文件变化
+    this.configWatcher = watchConfig((newConfig) => {
+      this.logger.info('Config file changed, reloading sources...');
+      
+      // 更新源配置
+      if (newConfig.sources) {
+        this.sourceManager.updateConfig({ sources: newConfig.sources });
+        this.logger.info(`Reloaded ${newConfig.sources.length} sources from config`);
+      }
     });
   }
   
@@ -445,6 +456,9 @@ class APIFriendApp {
     }
     
     this.logger.info('APIFriend shutting down...');
+    
+    // 关闭配置文件监听
+    this.configWatcher?.close();
     
     // 停止自动保存
     this.statePersistence?.stopAutoSave();

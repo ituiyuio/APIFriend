@@ -222,6 +222,49 @@ function getExampleConfigPath() {
 }
 
 /**
+ * 监听配置文件变化
+ * @param {Function} onChange - 配置变化回调 (newConfig) => void
+ * @param {string} configPath - 配置文件路径
+ * @returns {fs.FSWatcher} 监听器
+ */
+function watchConfig(onChange, configPath = 'config.json') {
+  const absolutePath = path.resolve(configPath);
+  let lastContent = '';
+  
+  // 读取初始内容
+  try {
+    lastContent = fs.readFileSync(absolutePath, 'utf8');
+  } catch (e) {
+    // 文件不存在，忽略
+  }
+  
+  const watcher = fs.watch(absolutePath, (eventType) => {
+    if (eventType === 'change') {
+      try {
+        const newContent = fs.readFileSync(absolutePath, 'utf8');
+        
+        // 检查内容是否真的变化了
+        if (newContent !== lastContent) {
+          lastContent = newContent;
+          
+          try {
+            const newConfig = loadConfig(configPath);
+            console.log(`[Config] ${configPath} changed, reloading...`);
+            onChange(newConfig);
+          } catch (err) {
+            console.error(`[Config] Failed to reload config: ${err.message}`);
+          }
+        }
+      } catch (e) {
+        // 读取失败，忽略
+      }
+    }
+  });
+  
+  return watcher;
+}
+
+/**
  * 保存配置到文件
  * @param {Object} config - 配置对象
  * @param {string} configPath - 配置文件路径
@@ -266,6 +309,7 @@ module.exports = {
   DEFAULT_RATE_LIMIT,
   loadConfig,
   saveConfig,
+  watchConfig,
   validateConfig,
   validateSource,
   deepMerge,
