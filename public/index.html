@@ -1274,9 +1274,15 @@
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       toast.className = `toast ${type}`;
+      
+      // 确保消息是字符串
+      const displayMessage = typeof message === 'object' 
+        ? (message.message || message.error || JSON.stringify(message))
+        : String(message);
+      
       toast.innerHTML = `
         <span>${type === 'success' ? '✓' : type === 'error' ? '✗' : '⚠'}</span>
-        <span>${message}</span>
+        <span>${displayMessage}</span>
       `;
       
       container.appendChild(toast);
@@ -1380,7 +1386,15 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         });
-        const data = await res.json();
+        
+        let data;
+        try {
+          data = await res.json();
+        } catch (parseErr) {
+          console.error('Failed to parse response:', parseErr);
+          showToast('error', '服务器响应格式错误');
+          return;
+        }
 
         if (data.success) {
           showToast('success', isNew ? '源已创建' : '源已更新');
@@ -1393,7 +1407,7 @@
           if (typeof data.error === 'string') {
             errMsg = data.error;
           } else if (data.error && typeof data.error === 'object') {
-            errMsg = data.error.message || JSON.stringify(data.error);
+            errMsg = data.error.message || data.error.type || JSON.stringify(data.error);
           } else if (data.message) {
             errMsg = data.message;
           }
@@ -1402,7 +1416,7 @@
         }
       } catch (err) {
         console.error('Request Error:', err);
-        showToast('error', '操作失败: ' + err.message);
+        showToast('error', '操作失败: ' + (err.message || '网络错误'));
       }
     }
 

@@ -493,6 +493,14 @@ class SourceManager extends EventEmitter {
       source.cooldownMinutes = updates.cooldownMinutes;
     }
     
+    if (updates.baseUrl !== undefined) {
+      source.baseUrl = updates.baseUrl;
+    }
+    
+    if (updates.apiKey !== undefined) {
+      source.apiKey = updates.apiKey;
+    }
+    
     this.emit('source_updated', { name, updates });
     return true;
   }

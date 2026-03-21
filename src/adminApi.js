@@ -327,7 +327,7 @@ function createAdminRouter(options = {}) {
       }
       
       // 可更新的字段
-      const allowedFields = ['priority', 'enabled', 'rateLimit', 'modelMapping', 'modelMappingStrict', 'cooldownMinutes'];
+      const allowedFields = ['priority', 'enabled', 'rateLimit', 'modelMapping', 'modelMappingStrict', 'cooldownMinutes', 'apiKey', 'baseUrl'];
       const actualUpdates = {};
       
       for (const field of allowedFields) {
