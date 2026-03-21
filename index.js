@@ -229,21 +229,16 @@ class APIFriendApp {
       onLog: (level, msg, data) => this.logger[level](msg, data)
     }));
     
+    // 静态文件服务（管理面板）
+    const path = require('path');
+    app.use(express.static(path.join(__dirname, 'public')));
+    
     // 代理路由 - OpenAI 兼容端点
     app.use('/v1', this._createProxyRouter());
     
-    // 根路径
+    // 根路径 - 重定向到管理面板
     app.get('/', (req, res) => {
-      res.json({
-        name: 'APIFriend',
-        version: require('./package.json').version,
-        status: 'running',
-        endpoints: {
-          proxy: '/v1/chat/completions',
-          admin: '/admin/sources',
-          health: '/admin/health'
-        }
-      });
+      res.redirect('/index.html');
     });
     
     // 404 处理
