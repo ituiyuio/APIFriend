@@ -824,8 +824,8 @@
         <span class="panel-title">📊 请求趋势（最近24小时）</span>
         <span class="panel-badge" id="chart-requests">0 请求</span>
       </div>
-      <div class="panel-content" style="padding: 20px;">
-        <canvas id="trend-chart" height="120"></canvas>
+      <div class="panel-content" style="padding: 20px; height: 140px;">
+        <canvas id="trend-chart" style="width: 100%; height: 100%;"></canvas>
       </div>
     </div>
 
@@ -1473,15 +1473,17 @@
       const canvas = document.getElementById('trend-chart');
       const ctx = canvas.getContext('2d');
       
+      // 固定高度
+      const width = canvas.parentElement.clientWidth;
+      const height = 100;  // 固定高度
+      
       // 高清屏适配
       const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
       ctx.scale(dpr, dpr);
-      
-      const width = rect.width;
-      const height = rect.height;
       const padding = { top: 20, right: 20, bottom: 30, left: 50 };
       const chartWidth = width - padding.left - padding.right;
       const chartHeight = height - padding.top - padding.bottom;
