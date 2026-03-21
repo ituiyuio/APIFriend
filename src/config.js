@@ -221,11 +221,51 @@ function getExampleConfigPath() {
   return path.resolve('config.example.json');
 }
 
+/**
+ * 保存配置到文件
+ * @param {Object} config - 配置对象
+ * @param {string} configPath - 配置文件路径
+ * @returns {boolean} 是否成功
+ */
+function saveConfig(config, configPath = 'config.json') {
+  const absolutePath = path.resolve(configPath);
+  
+  try {
+    // 创建要保存的配置（排除运行时状态）
+    const configToSave = {
+      server: config.server,
+      security: config.security,
+      sources: config.sources.map(source => ({
+        name: source.name,
+        baseUrl: source.baseUrl,
+        apiKey: source.apiKey,
+        priority: source.priority,
+        enabled: source.enabled,
+        format: source.format,
+        rateLimit: source.rateLimit,
+        modelMapping: source.modelMapping,
+        modelMappingStrict: source.modelMappingStrict,
+        cooldownMinutes: source.cooldownMinutes
+      })),
+      failover: config.failover,
+      persistence: config.persistence,
+      logging: config.logging
+    };
+    
+    fs.writeFileSync(absolutePath, JSON.stringify(configToSave, null, 2), 'utf8');
+    return true;
+  } catch (err) {
+    console.error(`Failed to save config: ${err.message}`);
+    return false;
+  }
+}
+
 module.exports = {
   DEFAULT_CONFIG,
   DEFAULT_SOURCE_CONFIG,
   DEFAULT_RATE_LIMIT,
   loadConfig,
+  saveConfig,
   validateConfig,
   validateSource,
   deepMerge,

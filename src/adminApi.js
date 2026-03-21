@@ -4,6 +4,36 @@
  */
 
 const express = require('express');
+const { saveConfig } = require('./config');
+
+/**
+ * 保存源配置到 config.json
+ * @param {Object} sourceManager - 源管理器
+ * @param {Object} config - 配置对象
+ */
+function saveSourcesToConfig(sourceManager, config) {
+  if (!sourceManager || !config) return;
+  
+  // 从 sourceManager 获取所有源
+  const sources = sourceManager.getAllSources();
+  
+  // 更新 config 对象
+  config.sources = sources.map(source => ({
+    name: source.name,
+    baseUrl: source.baseUrl,
+    apiKey: source.apiKey,
+    priority: source.priority,
+    enabled: source.enabled,
+    format: source.format,
+    rateLimit: source.rateLimit,
+    modelMapping: source.modelMapping,
+    modelMappingStrict: source.modelMappingStrict,
+    cooldownMinutes: source.cooldownMinutes
+  }));
+  
+  // 保存到文件
+  saveConfig(config);
+}
 
 /**
  * 创建管理 API 路由
@@ -166,6 +196,9 @@ function createAdminRouter(options = {}) {
         });
       }
       
+      // 保存到 config.json
+      saveSourcesToConfig(sourceManager, config);
+      
       // 触发状态持久化
       if (statePersistence) {
         await statePersistence.save(true);
@@ -216,6 +249,9 @@ function createAdminRouter(options = {}) {
       // 清理限流器
       rateLimiter?.reset(name);
       
+      // 保存到 config.json
+      saveSourcesToConfig(sourceManager, config);
+      
       // 触发状态持久化
       if (statePersistence) {
         await statePersistence.save(true);
@@ -253,6 +289,9 @@ function createAdminRouter(options = {}) {
       }
       
       sourceManager?.enableSource(name);
+      
+      // 保存到 config.json
+      saveSourcesToConfig(sourceManager, config);
       
       // 触发状态持久化
       if (statePersistence) {
@@ -292,6 +331,9 @@ function createAdminRouter(options = {}) {
       }
       
       sourceManager?.disableSource(name);
+      
+      // 保存到 config.json
+      saveSourcesToConfig(sourceManager, config);
       
       // 触发状态持久化
       if (statePersistence) {
@@ -357,6 +399,9 @@ function createAdminRouter(options = {}) {
           error: 'Failed to update source'
         });
       }
+      
+      // 保存到 config.json
+      saveSourcesToConfig(sourceManager, config);
       
       // 触发状态持久化
       if (statePersistence) {
