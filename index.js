@@ -306,6 +306,16 @@ class APIFriendApp {
     router.get('/models', (req, res) => {
       // 返回常见模型名称供 Claude Code 选择
       const defaultModels = [
+        // 实际模型名
+        'qwen3.5:35b',
+        'qwen3.5:9b',
+        'minimax-m2.7',
+        'stepfun/step-3.5-flash:free',
+        'meta-llama/llama-3-8b-instruct:free',
+        'meta-llama/llama-3-70b-instruct:free',
+        'llama3-8b-8192',
+        'mixtral-8x7b-32768',
+        // 常见别名
         'claude-3-5-sonnet-20241022',
         'claude-3-5-haiku-20241022',
         'claude-3-sonnet-20240229',
@@ -329,7 +339,9 @@ class APIFriendApp {
       
       sources.forEach(source => {
         if (source.enabled) {
+          // 添加实际模型名
           Object.entries(source.modelMapping || {}).forEach(([alias, real]) => {
+            if (real) customModels.add(real);
             if (alias !== 'default') {
               customModels.add(alias);
             }
