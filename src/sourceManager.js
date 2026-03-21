@@ -537,15 +537,32 @@ class SourceManager extends EventEmitter {
    * @returns {Object} 状态数据
    */
   exportState() {
-    const data = {};
+    const sources = {};
+    for (const [name, source] of this.sources) {
+      sources[name] = {
+        name: source.name,
+        baseUrl: source.baseUrl,
+        apiKey: source.apiKey,
+        priority: source.priority,
+        enabled: source.enabled,
+        format: source.format,
+        rateLimit: source.rateLimit,
+        modelMapping: source.modelMapping,
+        modelMappingStrict: source.modelMappingStrict,
+        cooldownMinutes: source.cooldownMinutes
+      };
+    }
+    
+    const states = {};
     for (const [name, state] of this.states) {
-      data[name] = {
+      states[name] = {
         status: state.status,
         stats: { ...state.stats },
         cooldownUntil: state.cooldownUntil
       };
     }
-    return data;
+    
+    return { sources, states };
   }
 
   /**
@@ -553,12 +570,24 @@ class SourceManager extends EventEmitter {
    * @param {Object} data - 状态数据
    */
   importState(data) {
-    for (const [name, state] of Object.entries(data)) {
-      if (this.states.has(name)) {
-        const currentState = this.states.get(name);
-        currentState.status = state.status;
-        currentState.stats = { ...state.stats };
-        currentState.cooldownUntil = state.cooldownUntil;
+    // 恢复源配置
+    if (data.sources) {
+      for (const [name, sourceConfig] of Object.entries(data.sources)) {
+        if (!this.sources.has(name)) {
+          this.addSource(sourceConfig);
+        }
+      }
+    }
+    
+    // 恢复状态
+    if (data.states) {
+      for (const [name, state] of Object.entries(data.states)) {
+        if (this.states.has(name)) {
+          const currentState = this.states.get(name);
+          currentState.status = state.status;
+          currentState.stats = { ...state.stats };
+          currentState.cooldownUntil = state.cooldownUntil;
+        }
       }
     }
   }
