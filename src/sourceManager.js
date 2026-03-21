@@ -399,6 +399,51 @@ class SourceManager extends EventEmitter {
   }
 
   /**
+   * 更新源配置
+   * @param {string} name - 源名称
+   * @param {Object} updates - 更新内容
+   * @returns {boolean} 是否成功
+   */
+  updateSource(name, updates) {
+    const source = this.sources.get(name);
+    if (!source) return false;
+    
+    // 应用更新
+    if (updates.priority !== undefined) {
+      source.priority = updates.priority;
+      // 注意：源在 selectSource 时会基于 priority 实时排序
+    }
+    
+    if (updates.enabled !== undefined) {
+      source.enabled = updates.enabled;
+      if (!updates.enabled) {
+        this.states.get(name).status = SourceStatus.DISABLED;
+      } else {
+        this.states.get(name).status = SourceStatus.ENABLED;
+      }
+    }
+    
+    if (updates.rateLimit !== undefined) {
+      source.rateLimit = { ...source.rateLimit, ...updates.rateLimit };
+    }
+    
+    if (updates.modelMapping !== undefined) {
+      source.modelMapping = updates.modelMapping;
+    }
+    
+    if (updates.modelMappingStrict !== undefined) {
+      source.modelMappingStrict = updates.modelMappingStrict;
+    }
+    
+    if (updates.cooldownMinutes !== undefined) {
+      source.cooldownMinutes = updates.cooldownMinutes;
+    }
+    
+    this.emit('source_updated', { name, updates });
+    return true;
+  }
+
+  /**
    * 获取源状态摘要
    * @param {string} name - 源名称
    * @returns {Object|null} 状态摘要

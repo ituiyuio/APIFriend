@@ -191,6 +191,71 @@ function createAdminRouter(options = {}) {
   });
   
   /**
+   * PATCH /admin/sources/:name
+   * 更新源配置
+   */
+  router.patch('/sources/:name', async (req, res) => {
+    try {
+      const { name } = req.params;
+      const updates = req.body;
+      
+      const source = sourceManager?.getSource(name);
+      if (!source) {
+        return res.status(404).json({
+          success: false,
+          error: 'Source not found'
+        });
+      }
+      
+      // 可更新的字段
+      const allowedFields = ['priority', 'enabled', 'rateLimit', 'modelMapping', 'modelMappingStrict', 'cooldownMinutes'];
+      const actualUpdates = {};
+      
+      for (const field of allowedFields) {
+        if (updates[field] !== undefined) {
+          actualUpdates[field] = updates[field];
+        }
+      }
+      
+      if (Object.keys(actualUpdates).length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'No valid fields to update'
+        });
+      }
+      
+      // 执行更新
+      const updated = sourceManager?.updateSource(name, actualUpdates);
+      
+      if (!updated) {
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to update source'
+        });
+      }
+      
+      // 触发状态持久化
+      if (statePersistence) {
+        await statePersistence.save(true);
+      }
+      
+      onLog('info', `Source updated: ${name}`, actualUpdates);
+      
+      res.json({
+        success: true,
+        message: `Source '${name}' updated`,
+        data: sourceManager?.getSourceSummary(name)
+      });
+    } catch (err) {
+      onLog('error', `Failed to update source: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  /**
    * POST /admin/sources/:name/reset
    * 重置源状态
    */

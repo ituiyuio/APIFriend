@@ -96,7 +96,7 @@ class APIFriendApp {
     });
     
     // 5. 初始化代理核心
-    this.proxy = new Proxy(this.config);
+    this.proxy = new Proxy(this.config, this.rateLimiter);
     this.logger.debug('Proxy initialized');
     
     // 6. 初始化故障检测器

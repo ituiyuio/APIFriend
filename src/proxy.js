@@ -129,13 +129,15 @@ class Proxy {
   /**
    * @param {Object} config - 配置对象
    * @param {Object} config.failover - 故障切换配置
+   * @param {Object} rateLimiter - 限流器实例（可选，用于Token统计）
    */
-  constructor(config = {}) {
+  constructor(config = {}, rateLimiter = null) {
     this.failoverConfig = config.failover || {
       timeoutMs: 15000,
       maxRetries: 3,
       retryDelayMs: 1000
     };
+    this.rateLimiter = rateLimiter;
   }
 
   /**
@@ -223,10 +225,11 @@ class Proxy {
    * @param {Object} options - 选项
    * @param {Function} options.onComplete - 完成回调，接收完整响应文本
    * @param {Function} options.onError - 错误回调
+   * @param {Function} options.onTokens - Token 统计回调，接收估算的 Token 数量
    * @returns {Promise<void>}
    */
   async pipeStreamResponse(upstreamResponse, clientResponse, options = {}) {
-    const { onComplete, onError } = options;
+    const { onComplete, onError, onTokens } = options;
     
     // 设置 SSE 响应头
     clientResponse.setHeader('Content-Type', 'text/event-stream');
@@ -246,6 +249,11 @@ class Proxy {
           
           if (done) {
             clientResponse.end();
+            // Token 统计
+            if (onTokens && fullText) {
+              const estimatedTokens = this.rateLimiter?.estimateTokens(fullText) || 0;
+              onTokens(estimatedTokens);
+            }
             if (onComplete) onComplete(fullText);
             resolve();
             return;
@@ -339,7 +347,15 @@ class Proxy {
         // 如果提供了客户端响应对象，透传响应
         if (clientResponse && result.response) {
           if (result.isStream) {
-            await this.pipeStreamResponse(result.response, clientResponse);
+            // 流式响应：传递 onTokens 回调统计 Token
+            const sourceName = currentSource.source.name;
+            await this.pipeStreamResponse(result.response, clientResponse, {
+              onTokens: (tokens) => {
+                if (this.rateLimiter) {
+                  this.rateLimiter.addTokens(sourceName, tokens);
+                }
+              }
+            });
           } else {
             await this.pipeResponse(result.response, clientResponse);
           }
