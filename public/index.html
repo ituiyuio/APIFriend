@@ -1048,11 +1048,14 @@
         const stats = source.stats || {};
 
         // Calculate progress percentages
+        // rateLimit 结构: { config: {...}, current: { requests: {...}, tokens: {...} } }
+        const rpmCurrent = rateLimit.current?.requests?.minuteCount || rateLimit.current?.minuteCount || 0;
+        const tpmCurrent = rateLimit.current?.tokens?.minuteCount || 0;
         const rpmPercent = rateLimit.config?.requestsPerMinute 
-          ? Math.min(100, (rateLimit.current?.minuteCount || 0) / rateLimit.config.requestsPerMinute * 100)
+          ? Math.min(100, rpmCurrent / rateLimit.config.requestsPerMinute * 100)
           : 0;
         const tpmPercent = rateLimit.config?.tokensPerMinute 
-          ? Math.min(100, (rateLimit.current?.tokens?.minuteCount || 0) / rateLimit.config.tokensPerMinute * 100)
+          ? Math.min(100, tpmCurrent / rateLimit.config.tokensPerMinute * 100)
           : 0;
 
         const getProgressClass = (percent) => {
@@ -1109,7 +1112,7 @@
               <div class="rate-limit-item">
                 <div class="rate-limit-header">
                   <span class="rate-limit-label">RPM (请求/分钟)</span>
-                  <span class="rate-limit-value">${rateLimit.current?.minuteCount || 0} / ${rateLimit.config?.requestsPerMinute || '∞'}</span>
+                  <span class="rate-limit-value">${rpmCurrent} / ${rateLimit.config?.requestsPerMinute || '∞'}</span>
                 </div>
                 <div class="progress-bar">
                   <div class="progress-fill ${getProgressClass(rpmPercent)}" style="width: ${rpmPercent}%"></div>
@@ -1118,7 +1121,7 @@
               <div class="rate-limit-item">
                 <div class="rate-limit-header">
                   <span class="rate-limit-label">TPM (Token/分钟)</span>
-                  <span class="rate-limit-value">${rateLimit.current?.tokens?.minuteCount || 0} / ${rateLimit.config?.tokensPerMinute || '∞'}</span>
+                  <span class="rate-limit-value">${tpmCurrent} / ${rateLimit.config?.tokensPerMinute || '∞'}</span>
                 </div>
                 <div class="progress-bar">
                   <div class="progress-fill ${getProgressClass(tpmPercent)}" style="width: ${tpmPercent}%"></div>
