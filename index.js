@@ -351,6 +351,18 @@ class APIFriendApp {
       });
     });
     
+    // GET /v1/models/:model - 获取单个模型
+    router.get('/models/:model', (req, res) => {
+      const modelId = req.params.model;
+      
+      res.json({
+        id: modelId,
+        object: 'model',
+        created: Date.now(),
+        owned_by: 'apifriend'
+      });
+    });
+    
     // POST /v1/chat/completions - 聊天完成
     router.post('/chat/completions', async (req, res) => {
       await this._handleProxyRequest(req, res);
