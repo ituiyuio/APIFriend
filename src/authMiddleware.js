@@ -18,6 +18,7 @@ function createAuthMiddleware(options = {}) {
     proxyApiKey,
     adminApiKey,
     skipPaths = ['/admin/health'],
+    skipAdminPanel = true,  // 默认跳过管理面板认证
     keyHeader = 'x-proxy-key',
     onLog = console.log
   } = options;
@@ -54,6 +55,12 @@ function createAuthMiddleware(options = {}) {
    * @returns {boolean}
    */
   function shouldSkip(path) {
+    // 默认跳过静态文件和管理面板 HTML
+    const defaultSkips = ['/', '/index.html', '/favicon.ico'];
+    if (defaultSkips.includes(path) || path.startsWith('/admin')) {
+      return true;
+    }
+    
     return skipPaths.some(skipPath => {
       if (skipPath.endsWith('*')) {
         return path.startsWith(skipPath.slice(0, -1));

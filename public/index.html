@@ -1352,9 +1352,20 @@
           fetchSources();
           addLog('info', `${isNew ? '创建' : '更新'}源: ${name}`);
         } else {
-          showToast('error', data.error || '操作失败');
+          // 处理各种格式的错误信息
+          let errMsg = '操作失败';
+          if (typeof data.error === 'string') {
+            errMsg = data.error;
+          } else if (data.error && typeof data.error === 'object') {
+            errMsg = data.error.message || JSON.stringify(data.error);
+          } else if (data.message) {
+            errMsg = data.message;
+          }
+          console.error('API Error:', data);
+          showToast('error', errMsg);
         }
       } catch (err) {
+        console.error('Request Error:', err);
         showToast('error', '操作失败: ' + err.message);
       }
     }

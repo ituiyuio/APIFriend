@@ -200,12 +200,11 @@ class APIFriendApp {
     // 请求日志
     app.use(createRequestLogMiddleware(this.logger));
     
-    // 认证中间件
+    // 认证中间件（仅保护代理路由 /v1/*）
     if (this.config.security?.proxyApiKey) {
       app.use(createAuthMiddleware({
         proxyApiKey: this.config.security.proxyApiKey,
         adminApiKey: this.config.security.adminApiKey,
-        skipPaths: ['/admin/health'],
         onLog: (level, msg, data) => this.logger[level](msg, data)
       }));
       this.logger.info('Authentication middleware enabled');
