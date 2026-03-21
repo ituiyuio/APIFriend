@@ -780,6 +780,9 @@
         <button class="btn btn-secondary" onclick="refreshAll()">
           <span>🔄</span> 刷新
         </button>
+        <button class="btn btn-secondary" onclick="reloadConfig()">
+          <span>⚙</span> 重载配置
+        </button>
         <button class="btn btn-secondary" onclick="resetAll()">
           <span>↻</span> 重置统计
         </button>
@@ -1259,6 +1262,24 @@
         }
       } catch (err) {
         showToast('error', '重置失败: ' + err.message);
+      }
+    }
+
+    // Reload config from file
+    async function reloadConfig() {
+      try {
+        const res = await fetch(`${API_BASE}/reload`, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('success', `配置已重载，${data.sourcesCount} 个源`);
+          fetchSources();
+          addLog('info', '手动重载配置文件');
+        } else {
+          showToast('error', data.error || '重载失败');
+        }
+      } catch (err) {
+        showToast('error', '重载失败: ' + err.message);
       }
     }
 

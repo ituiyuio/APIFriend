@@ -213,6 +213,10 @@ function loadConfig(configPath = 'config.json') {
   }
 }
 
+let lastContent = '';
+let configWatcher = null;
+let savedOnChange = null;  // 保存回调函数
+
 /**
  * 获取配置文件示例路径
  * @returns {string} 示例配置文件路径
@@ -229,7 +233,9 @@ function getExampleConfigPath() {
  */
 function watchConfig(onChange, configPath = 'config.json') {
   const absolutePath = path.resolve(configPath);
-  let lastContent = '';
+  
+  // 保存回调供手动重载使用
+  savedOnChange = onChange;
   
   // 读取初始内容
   try {
@@ -238,30 +244,60 @@ function watchConfig(onChange, configPath = 'config.json') {
     // 文件不存在，忽略
   }
   
-  const watcher = fs.watch(absolutePath, (eventType) => {
+  configWatcher = fs.watch(absolutePath, (eventType) => {
     if (eventType === 'change') {
-      try {
-        const newContent = fs.readFileSync(absolutePath, 'utf8');
-        
-        // 检查内容是否真的变化了
-        if (newContent !== lastContent) {
-          lastContent = newContent;
+      // 延迟读取，等待文件写入完成
+      setTimeout(() => {
+        try {
+          const newContent = fs.readFileSync(absolutePath, 'utf8');
           
-          try {
-            const newConfig = loadConfig(configPath);
-            console.log(`[Config] ${configPath} changed, reloading...`);
-            onChange(newConfig);
-          } catch (err) {
-            console.error(`[Config] Failed to reload config: ${err.message}`);
+          // 检查内容是否真的变化了
+          if (newContent !== lastContent) {
+            lastContent = newContent;
+            
+            try {
+              const newConfig = loadConfig(configPath);
+              console.log(`[Config] ${configPath} changed, reloading...`);
+              if (savedOnChange) savedOnChange(newConfig);
+            } catch (err) {
+              console.error(`[Config] Failed to reload config: ${err.message}`);
+            }
           }
+        } catch (e) {
+          // 读取失败，忽略
         }
-      } catch (e) {
-        // 读取失败，忽略
-      }
+      }, 100);
     }
   });
   
-  return watcher;
+  return configWatcher;
+}
+
+/**
+ * 手动重载配置（用于外部修改后触发）
+ * @param {string} configPath - 配置文件路径
+ * @returns {Object|null} 新配置或 null
+ */
+function reloadConfig(configPath = 'config.json') {
+  const absolutePath = path.resolve(configPath);
+  
+  try {
+    const newContent = fs.readFileSync(absolutePath, 'utf8');
+    lastContent = newContent;
+    
+    const newConfig = loadConfig(configPath);
+    console.log(`[Config] ${configPath} manually reloaded`);
+    
+    // 调用保存的回调
+    if (savedOnChange) {
+      savedOnChange(newConfig);
+    }
+    
+    return newConfig;
+  } catch (err) {
+    console.error(`[Config] Failed to reload config: ${err.message}`);
+    return null;
+  }
 }
 
 /**
@@ -310,6 +346,7 @@ module.exports = {
   loadConfig,
   saveConfig,
   watchConfig,
+  reloadConfig,
   validateConfig,
   validateSource,
   deepMerge,

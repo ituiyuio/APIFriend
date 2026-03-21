@@ -4,7 +4,7 @@
  */
 
 const express = require('express');
-const { saveConfig } = require('./config');
+const { saveConfig, reloadConfig } = require('./config');
 
 /**
  * 保存源配置到 config.json
@@ -45,6 +45,7 @@ function saveSourcesToConfig(sourceManager, config) {
  * @param {Object} options.statsRecorder - 统计记录器实例
  * @param {Object} options.config - 配置对象
  * @param {Function} options.onLog - 日志回调
+ * @param {Function} options.onReloadConfig - 重载配置回调
  * @returns {express.Router} Express 路由
  */
 function createAdminRouter(options = {}) {
@@ -56,7 +57,8 @@ function createAdminRouter(options = {}) {
     statePersistence,
     statsRecorder,
     config,
-    onLog = console.log
+    onLog = console.log,
+    onReloadConfig
   } = options;
   
   /**
@@ -636,6 +638,35 @@ function createAdminRouter(options = {}) {
       status: 'healthy',
       timestamp: new Date().toISOString()
     });
+  });
+  
+  /**
+   * POST /admin/reload
+   * 手动重载配置
+   */
+  router.post('/reload', (req, res) => {
+    try {
+      const newConfig = reloadConfig();
+      
+      if (newConfig) {
+        res.json({
+          success: true,
+          message: 'Configuration reloaded',
+          sourcesCount: newConfig.sources?.length || 0
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to reload configuration'
+        });
+      }
+    } catch (err) {
+      onLog('error', `Failed to reload config: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
   });
   
   return router;

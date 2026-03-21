@@ -7,7 +7,7 @@ const express = require('express');
 const http = require('http');
 
 // 导入模块
-const { loadConfig, validateConfig, DEFAULT_CONFIG, watchConfig } = require('./src/config');
+const { loadConfig, validateConfig, DEFAULT_CONFIG, watchConfig, reloadConfig } = require('./src/config');
 const { RateLimiter } = require('./src/rateLimiter');
 const { SourceManager, SourceStatus } = require('./src/sourceManager');
 const { Proxy } = require('./src/proxy');
@@ -180,7 +180,7 @@ class APIFriendApp {
     });
     
     // 监听配置文件变化
-    this.configWatcher = watchConfig((newConfig) => {
+    this._onConfigChange = (newConfig) => {
       this.logger.info('Config file changed, reloading sources...');
       
       // 更新源配置
@@ -188,7 +188,17 @@ class APIFriendApp {
         this.sourceManager.updateConfig({ sources: newConfig.sources });
         this.logger.info(`Reloaded ${newConfig.sources.length} sources from config`);
       }
-    });
+    };
+    
+    this.configWatcher = watchConfig(this._onConfigChange);
+  }
+  
+  /**
+   * 手动重载配置
+   */
+  reloadConfig() {
+    const newConfig = reloadConfig(this._onConfigChange);
+    return newConfig;
   }
   
   /**
@@ -246,7 +256,8 @@ class APIFriendApp {
       statePersistence: this.statePersistence,
       statsRecorder: this.statsRecorder,
       config: this.config,
-      onLog: (level, msg, data) => this.logger[level](msg, data)
+      onLog: (level, msg, data) => this.logger[level](msg, data),
+      onReloadConfig: () => this.reloadConfig()
     }));
     
     // 静态文件服务（管理面板）
