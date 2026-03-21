@@ -304,23 +304,45 @@ class APIFriendApp {
     
     // GET /v1/models - 列出可用模型
     router.get('/models', (req, res) => {
+      // 返回常见模型名称供 Claude Code 选择
+      const defaultModels = [
+        'claude-3-5-sonnet-20241022',
+        'claude-3-5-haiku-20241022',
+        'claude-3-sonnet-20240229',
+        'claude-3-haiku-20240307',
+        'claude-3-opus-20240229',
+        'gpt-4o',
+        'gpt-4o-mini',
+        'gpt-4-turbo',
+        'gpt-3.5-turbo',
+        'llama-3-8b',
+        'llama-3-70b',
+        'qwen-2.5-72b',
+        'deepseek-chat',
+        'deepseek-coder',
+        'mistral-large',
+        'mixtral-8x7b'
+      ];
+      
       const sources = this.sourceManager.getAllSources();
-      const models = new Set();
+      const customModels = new Set();
       
       sources.forEach(source => {
         if (source.enabled) {
-          // 添加映射的模型
           Object.entries(source.modelMapping || {}).forEach(([alias, real]) => {
             if (alias !== 'default') {
-              models.add(alias);
+              customModels.add(alias);
             }
           });
         }
       });
       
+      // 合并默认模型和自定义模型
+      const allModels = [...new Set([...defaultModels, ...customModels])];
+      
       res.json({
         object: 'list',
-        data: Array.from(models).map(id => ({
+        data: allModels.map(id => ({
           id,
           object: 'model',
           created: Date.now(),
