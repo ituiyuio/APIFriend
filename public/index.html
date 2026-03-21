@@ -1069,6 +1069,7 @@
                 <div>
                   <div class="source-name">${source.name}</div>
                   <div class="source-url">${source.baseUrl}</div>
+                  ${source.modelMapping?.default ? `<div style="font-size: 11px; color: var(--accent-cyan); margin-top: 2px;">模型: ${source.modelMapping.default}</div>` : ''}
                 </div>
               </div>
               <span class="source-status ${statusClass}">${statusText}</span>
@@ -1320,8 +1321,10 @@
       document.getElementById('source-baseurl').value = source.baseUrl;
       document.getElementById('source-apikey').value = '';
       document.getElementById('source-priority').value = source.priority || 100;
-      document.getElementById('source-rpm').value = source.rateLimit?.config?.requestsPerMinute || '';
-      document.getElementById('source-tpm').value = source.rateLimit?.config?.tokensPerMinute || '';
+      // rateLimit 可能是 { config: {...}, current: {...} } 或直接 { requestsPerMinute: ... }
+      const rateLimitConfig = source.rateLimit?.config || source.rateLimit || {};
+      document.getElementById('source-rpm').value = rateLimitConfig.requestsPerMinute || '';
+      document.getElementById('source-tpm').value = rateLimitConfig.tokensPerMinute || '';
       document.getElementById('source-model').value = source.modelMapping?.default || '';
       document.getElementById('delete-btn').style.display = 'block';
       document.getElementById('modal-overlay').classList.add('active');

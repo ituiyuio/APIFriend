@@ -47,7 +47,12 @@ function createAdminRouter(options = {}) {
           enabled: source.enabled,
           status: summary?.status || 'unknown',
           stats: summary?.stats || {},
-          rateLimit: rateLimitState || {}
+          modelMapping: source.modelMapping || {},
+          modelMappingStrict: source.modelMappingStrict || false,
+          rateLimit: {
+            config: source.rateLimit || {},
+            current: rateLimitState || {}
+          }
         };
       });
       
