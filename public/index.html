@@ -1014,7 +1014,8 @@
     // Fetch sources
     async function fetchSources() {
       try {
-        const res = await fetch(`${API_BASE}/sources`);
+        // 添加时间戳防止缓存
+        const res = await fetch(`${API_BASE}/sources?_t=${Date.now()}`);
         const data = await res.json();
         
         if (data.success) {
@@ -1463,7 +1464,8 @@
         if (data.success) {
           showToast('success', '源已删除');
           closeModal();
-          fetchSources();
+          // 强制刷新源列表
+          await fetchSources();
           addLog('info', `删除源: ${name}`);
         } else {
           showToast('error', data.error || '删除失败');
