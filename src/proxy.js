@@ -382,7 +382,11 @@ class Proxy {
       }
       
       // 失败，标记并尝试切换源
-      sourceManager.markFailure(currentSource.source.name, result.errorType);
+      sourceManager.markFailure(currentSource.source.name, result.errorType, {
+        type: result.errorType,
+        message: result.error || result.message,
+        statusCode: result.statusCode
+      });
       
       // 记录失败统计
       if (this.statsRecorder) {

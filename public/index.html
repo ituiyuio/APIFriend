@@ -1030,6 +1030,19 @@
           'cooling': '冷却中',
           'disabled': '已禁用'
         }[source.status] || source.status;
+        
+        // 错误类型显示
+        const lastError = source.stats?.lastError;
+        const errorTypeMap = {
+          'rate_limit': { text: '频率限制', color: 'var(--accent-orange)', icon: '⏱' },
+          'server_error': { text: '服务器错误', color: 'var(--accent-red)', icon: '⚠' },
+          'auth_error': { text: '认证失败', color: 'var(--accent-red)', icon: '🔐' },
+          'timeout': { text: '请求超时', color: 'var(--accent-orange)', icon: '⏳' },
+          'network_error': { text: '网络错误', color: 'var(--accent-red)', icon: '📡' },
+          'client_error': { text: '客户端错误', color: 'var(--accent-orange)', icon: '❌' },
+          'stream_error': { text: '流式错误', color: 'var(--accent-orange)', icon: '📊' }
+        };
+        const errorInfo = lastError?.type ? errorTypeMap[lastError.type] || { text: lastError.type, color: 'var(--text-muted)', icon: '❓' } : null;
 
         const rateLimit = source.rateLimit || {};
         const stats = source.stats || {};
@@ -1079,6 +1092,17 @@
                 <div class="source-stat-label">连续失败</div>
               </div>
             </div>
+            
+            ${errorInfo ? `
+            <div style="margin-bottom: 12px; padding: 10px 12px; background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 3px solid ${errorInfo.color};">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+                <span>${errorInfo.icon}</span>
+                <span style="color: ${errorInfo.color}; font-weight: 500;">${errorInfo.text}</span>
+                ${lastError.statusCode ? `<span style="color: var(--text-muted);">(HTTP ${lastError.statusCode})</span>` : ''}
+              </div>
+              ${lastError.message ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: 'JetBrains Mono', monospace; word-break: break-all;">${typeof lastError.message === 'string' ? lastError.message.substring(0, 100) : JSON.stringify(lastError.message).substring(0, 100)}</div>` : ''}
+            </div>
+            ` : ''}
 
             <div class="rate-limit-section">
               <div class="rate-limit-item">

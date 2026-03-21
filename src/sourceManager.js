@@ -63,7 +63,8 @@ class SourceManager extends EventEmitter {
         failureCount: 0,
         lastSuccess: null,
         lastFailure: null,
-        consecutiveFailures: 0
+        consecutiveFailures: 0,
+        lastError: null  // { type, message, statusCode, timestamp }
       },
       cooldownUntil: null
     });
@@ -336,8 +337,9 @@ class SourceManager extends EventEmitter {
    * 标记请求失败
    * @param {string} name - 源名称
    * @param {string} reason - 失败原因
+   * @param {Object} errorInfo - 错误详情 { type, message, statusCode }
    */
-  markFailure(name, reason = 'unknown') {
+  markFailure(name, reason = 'unknown', errorInfo = null) {
     const state = this.states.get(name);
     if (!state) return;
     
@@ -345,6 +347,14 @@ class SourceManager extends EventEmitter {
     state.stats.failureCount++;
     state.stats.lastFailure = new Date().toISOString();
     state.stats.consecutiveFailures++;
+    
+    // 记录错误详情
+    state.stats.lastError = {
+      type: errorInfo?.type || reason,
+      message: errorInfo?.message || null,
+      statusCode: errorInfo?.statusCode || null,
+      timestamp: new Date().toISOString()
+    };
     
     this.emit('source_failure', { name, reason, consecutiveFailures: state.stats.consecutiveFailures });
     
