@@ -151,6 +151,13 @@ class APIFriendApp {
       // 启动自动保存
       this.statePersistence.startAutoSave();
       
+      // 设置状态变化回调，触发立即持久化
+      this.sourceManager.onStateChange = () => {
+        this.statePersistence.save(true).catch(err => {
+          this.logger.warn('Failed to save state on change', { error: err.message });
+        });
+      };
+      
       this.logger.info('StatePersistence initialized');
     }
     
@@ -304,57 +311,12 @@ class APIFriendApp {
     
     // GET /v1/models - 列出可用模型
     router.get('/models', (req, res) => {
-      // 返回常见模型名称供 Claude Code 选择
-      const defaultModels = [
-        // 实际模型名
-        'qwen3.5:35b',
-        'qwen3.5:9b',
-        'minimax-m2.7',
-        'stepfun/step-3.5-flash:free',
-        'meta-llama/llama-3-8b-instruct:free',
-        'meta-llama/llama-3-70b-instruct:free',
-        'llama3-8b-8192',
-        'mixtral-8x7b-32768',
-        // 常见别名
-        'claude-3-5-sonnet-20241022',
-        'claude-3-5-haiku-20241022',
-        'claude-3-sonnet-20240229',
-        'claude-3-haiku-20240307',
-        'claude-3-opus-20240229',
-        'gpt-4o',
-        'gpt-4o-mini',
-        'gpt-4-turbo',
-        'gpt-3.5-turbo',
-        'llama-3-8b',
-        'llama-3-70b',
-        'qwen-2.5-72b',
-        'deepseek-chat',
-        'deepseek-coder',
-        'mistral-large',
-        'mixtral-8x7b'
-      ];
-      
-      const sources = this.sourceManager.getAllSources();
-      const customModels = new Set();
-      
-      sources.forEach(source => {
-        if (source.enabled) {
-          // 添加实际模型名
-          Object.entries(source.modelMapping || {}).forEach(([alias, real]) => {
-            if (real) customModels.add(real);
-            if (alias !== 'default') {
-              customModels.add(alias);
-            }
-          });
-        }
-      });
-      
-      // 合并默认模型和自定义模型
-      const allModels = [...new Set([...defaultModels, ...customModels])];
+      // 只返回 friend 模型，简化 Claude Code 选择
+      const models = ['friend'];
       
       res.json({
         object: 'list',
-        data: allModels.map(id => ({
+        data: models.map(id => ({
           id,
           object: 'model',
           created: Date.now(),
@@ -390,7 +352,407 @@ class APIFriendApp {
       await this._handleProxyRequest(req, res);
     });
     
+    // POST /v1/messages - Anthropic 原生 API 兼容
+    router.post('/messages', async (req, res) => {
+      await this._handleAnthropicRequest(req, res);
+    });
+    
     return router;
+  }
+  
+  /**
+   * 处理 Anthropic 格式的请求
+   * 将 Anthropic API 格式转换为 OpenAI 格式
+   */
+  async _handleAnthropicRequest(req, res) {
+    const startTime = Date.now();
+    
+    try {
+      // 转换 Anthropic 格式到 OpenAI 格式
+      const anthropicBody = req.body;
+      const openaiBody = this._convertAnthropicToOpenAI(anthropicBody);
+      const isStream = openaiBody.stream;
+      const requestedModel = anthropicBody.model;
+      
+      // 选择源
+      const selected = this.sourceManager.selectSource(requestedModel);
+      if (!selected) {
+        return res.status(503).json({
+          type: 'error',
+          error: {
+            type: 'no_available_source',
+            message: 'No available source found'
+          }
+        });
+      }
+      
+      // 构建请求体（应用模型映射）
+      const requestBody = {
+        ...openaiBody,
+        model: selected.mappedModel || openaiBody.model
+      };
+      
+      // 转发请求
+      const result = await this.proxy.forward(
+        selected.source,
+        '/chat/completions',
+        'POST',
+        requestBody,
+        { 'content-type': 'application/json' }
+      );
+      
+      const duration = Date.now() - startTime;
+      
+      if (!result.success) {
+        this.sourceManager.markFailure(selected.source.name, result.errorType, {
+          type: result.errorType,
+          message: result.error || result.message,
+          statusCode: result.statusCode
+        });
+        
+        this.logger.error('Anthropic proxy request failed', {
+          path: req.path,
+          source: selected.source.name,
+          error: result.error,
+          duration
+        });
+        
+        return res.status(result.statusCode || 502).json({
+          type: 'error',
+          error: {
+            type: 'proxy_error',
+            message: result.message || (typeof result.error === 'string' ? result.error : JSON.stringify(result.error))
+          }
+        });
+      }
+      
+      // 标记成功
+      this.sourceManager.markSuccess(selected.source.name);
+      
+      // 流式响应
+      if (result.isStream) {
+        return await this._handleAnthropicStreamResponse(res, result.response, anthropicBody.model, selected.source.name, startTime);
+      }
+      
+      // 非流式响应
+      return await this._handleAnthropicNonStreamResponse(res, result.response, anthropicBody.model, selected.source.name, startTime);
+      
+    } catch (err) {
+      this.logger.error('Anthropic proxy request error', {
+        path: req.path,
+        error: err.message,
+        stack: err.stack
+      });
+      
+      if (!res.headersSent) {
+        res.status(500).json({
+          type: 'error',
+          error: {
+            type: 'internal_error',
+            message: err.message
+          }
+        });
+      }
+    }
+  }
+  
+  /**
+   * 处理 Anthropic 流式响应
+   */
+  async _handleAnthropicStreamResponse(res, upstreamResponse, model, sourceName, startTime) {
+    // 设置 SSE 响应头
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    
+    const messageId = `msg_${Date.now()}`;
+    
+    // 发送 message_start 事件
+    const messageStart = {
+      type: 'message_start',
+      message: {
+        id: messageId,
+        type: 'message',
+        role: 'assistant',
+        content: [],
+        model: model,
+        stop_reason: null,
+        usage: { input_tokens: 0, output_tokens: 0 }
+      }
+    };
+    res.write(`event: message_start\ndata: ${JSON.stringify(messageStart)}\n\n`);
+    
+    let hasStartedContent = false;
+    let fullText = '';
+    
+    try {
+      const reader = upstreamResponse.body.getReader();
+      const decoder = new TextDecoder();
+      
+      const pump = async () => {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          // 发送结束事件
+          if (hasStartedContent) {
+            res.write(`event: content_block_stop\ndata: {"type":"content_block_stop","index":0}\n\n`);
+          }
+          res.write(`event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":0}}\n\n`);
+          res.write(`event: message_stop\ndata: {}\n\n`);
+          res.end();
+          
+          const latency = Date.now() - startTime;
+          
+          // 记录统计
+          if (this.statsRecorder) {
+            this.statsRecorder.recordRequest({
+              source: sourceName,
+              success: true,
+              latency: latency
+            });
+          }
+          
+          this.logger.info('Anthropic proxy request completed', {
+            path: '/v1/messages',
+            source: sourceName,
+            model: model,
+            isStream: true,
+            duration: latency
+          });
+          return;
+        }
+        
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+        
+        // 解析 OpenAI SSE 格式
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+            
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta;
+              
+              if (delta?.content) {
+                // 首次输出内容时发送 content_block_start
+                if (!hasStartedContent) {
+                  hasStartedContent = true;
+                  res.write(`event: content_block_start\ndata: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n\n`);
+                }
+                
+                // 转义并发送内容
+                const escapedContent = delta.content
+                  .replace(/\\/g, '\\\\')
+                  .replace(/"/g, '\\"')
+                  .replace(/\n/g, '\\n')
+                  .replace(/\r/g, '\\r')
+                  .replace(/\t/g, '\\t');
+                
+                res.write(`event: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"${escapedContent}"}}\n\n`);
+              }
+            } catch (e) {
+              // 忽略解析错误
+            }
+          }
+        }
+        
+        await pump();
+      };
+      
+      await pump();
+      
+    } catch (err) {
+      this.logger.error('Anthropic stream error', { error: err.message });
+      if (!res.writableEnded) {
+        res.write(`event: error\ndata: ${JSON.stringify({ type: 'error', error: { message: err.message } })}\n\n`);
+        res.end();
+      }
+    }
+  }
+  
+  /**
+   * 处理 Anthropic 非流式响应
+   */
+  async _handleAnthropicNonStreamResponse(res, upstreamResponse, model, sourceName, startTime) {
+    try {
+      const body = await upstreamResponse.json();
+      
+      const anthropicResponse = this._convertOpenAIToAnthropic(body, model);
+      
+      const latency = Date.now() - startTime;
+      const tokens = (body.usage?.prompt_tokens || 0) + (body.usage?.completion_tokens || 0);
+      
+      // 记录统计
+      if (this.statsRecorder) {
+        this.statsRecorder.recordRequest({
+          source: sourceName,
+          success: true,
+          tokens: tokens,
+          latency: latency
+        });
+      }
+      
+      this.logger.info('Anthropic proxy request completed', {
+        path: '/v1/messages',
+        source: sourceName,
+        model: model,
+        isStream: false,
+        duration: latency
+      });
+      
+      res.json(anthropicResponse);
+    } catch (err) {
+      this.logger.error('Anthropic response parse error', { error: err.message });
+      res.status(502).json({
+        type: 'error',
+        error: {
+          type: 'response_parse_error',
+          message: err.message
+        }
+      });
+    }
+  }
+  
+  /**
+   * 将 OpenAI 响应格式转换为 Anthropic 格式
+   */
+  _convertOpenAIToAnthropic(openaiResponse, model) {
+    const content = openaiResponse.choices?.[0]?.message?.content || '';
+    const inputTokens = openaiResponse.usage?.prompt_tokens || 0;
+    const outputTokens = openaiResponse.usage?.completion_tokens || 0;
+    
+    return {
+      id: `msg_${Date.now()}`,
+      type: 'message',
+      role: 'assistant',
+      model: model,
+      content: [
+        {
+          type: 'text',
+          text: content
+        }
+      ],
+      stop_reason: openaiResponse.choices?.[0]?.finish_reason === 'length' ? 'max_tokens' : 'end_turn',
+      stop_sequence: null,
+      usage: {
+        input_tokens: inputTokens,
+        output_tokens: outputTokens
+      }
+    };
+  }
+  
+  /**
+   * 将 Anthropic 格式转换为 OpenAI 格式
+   */
+  _convertAnthropicToOpenAI(anthropicBody) {
+    const messages = [];
+    
+    // 处理 system
+    if (anthropicBody.system) {
+      messages.push({
+        role: 'system',
+        content: anthropicBody.system
+      });
+    }
+    
+    // 处理 messages
+    if (anthropicBody.messages && Array.isArray(anthropicBody.messages)) {
+      for (const msg of anthropicBody.messages) {
+        // 处理 content 可能是字符串或数组的情况
+        let content = msg.content;
+        if (Array.isArray(content)) {
+          // 提取文本内容
+          content = content
+            .filter(c => c.type === 'text')
+            .map(c => c.text)
+            .join('\n');
+        }
+        
+        messages.push({
+          role: msg.role,
+          content: content
+        });
+      }
+    }
+    
+    return {
+      model: anthropicBody.model,
+      messages: messages,
+      stream: anthropicBody.stream || false,
+      max_tokens: anthropicBody.max_tokens,
+      temperature: anthropicBody.temperature,
+      top_p: anthropicBody.top_p,
+      stop: anthropicBody.stop_sequences
+    };
+  }
+  
+  /**
+   * 创建 Anthropic 流式响应转换器
+   * 将 OpenAI SSE 格式转换为 Anthropic SSE 格式
+   */
+  _createAnthropicStreamTransformer(model, messageId) {
+    let hasStartedContent = false;
+    
+    return (openaiChunk) => {
+      try {
+        // 解析 OpenAI chunk
+        if (!openaiChunk || openaiChunk === '[DONE]') {
+          // 发送结束事件
+          const events = [];
+          events.push(`event: content_block_stop\ndata: {"type":"content_block_stop","index":0}\n\n`);
+          events.push(`event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":0}}\n\n`);
+          events.push(`event: message_stop\ndata: {}\n\n`);
+          return events.join('');
+        }
+        
+        const data = JSON.parse(openaiChunk);
+        const delta = data.choices?.[0]?.delta;
+        const finishReason = data.choices?.[0]?.finish_reason;
+        
+        if (!delta && !finishReason) return null;
+        
+        const events = [];
+        
+        // 处理内容
+        if (delta?.content) {
+          // 首次输出内容时发送 content_block_start
+          if (!hasStartedContent) {
+            hasStartedContent = true;
+            events.push(`event: content_block_start\ndata: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n\n`);
+          }
+          
+          // 转义 JSON 特殊字符
+          const escapedContent = delta.content
+            .replace(/\\/g, '\\\\')
+            .replace(/"/g, '\\"')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/\t/g, '\\t');
+          
+          events.push(`event: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"${escapedContent}"}}\n\n`);
+        }
+        
+        // 处理结束
+        if (finishReason) {
+          if (hasStartedContent) {
+            events.push(`event: content_block_stop\ndata: {"type":"content_block_stop","index":0}\n\n`);
+          }
+          
+          const stopReason = finishReason === 'length' ? 'max_tokens' : 'end_turn';
+          events.push(`event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"${stopReason}"},"usage":{"output_tokens":0}}\n\n`);
+          events.push(`event: message_stop\ndata: {}\n\n`);
+        }
+        
+        return events.length > 0 ? events.join('') : null;
+      } catch (e) {
+        this.logger.warn('Stream transform error', { error: e.message });
+        return null;
+      }
+    };
   }
   
   /**

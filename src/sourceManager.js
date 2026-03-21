@@ -326,6 +326,11 @@ class SourceManager extends EventEmitter {
     state.stats.consecutiveFailures = 0;
     state.stats.lastError = null; // 成功后清除错误信息
     
+    // 触发状态持久化
+    if (this.onStateChange) {
+      this.onStateChange();
+    }
+    
     // 如果在冷却中且成功，可以提前恢复
     if (state.status === SourceStatus.COOLING) {
       state.status = SourceStatus.ENABLED;
@@ -356,6 +361,11 @@ class SourceManager extends EventEmitter {
       statusCode: errorInfo?.statusCode || null,
       timestamp: new Date().toISOString()
     };
+    
+    // 触发状态持久化
+    if (this.onStateChange) {
+      this.onStateChange();
+    }
     
     this.emit('source_failure', { name, reason, consecutiveFailures: state.stats.consecutiveFailures });
     

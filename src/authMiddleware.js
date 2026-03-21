@@ -35,13 +35,19 @@ function createAuthMiddleware(options = {}) {
       return authHeader.slice(7);
     }
     
-    // 2. 从自定义 header 获取
+    // 2. 从 x-api-key header 获取 (Anthropic 标准)
+    const xApiKey = req.headers['x-api-key'];
+    if (xApiKey) {
+      return xApiKey;
+    }
+    
+    // 3. 从自定义 header 获取
     const customKey = req.headers[keyHeader.toLowerCase()];
     if (customKey) {
       return customKey;
     }
     
-    // 3. 从查询参数获取
+    // 4. 从查询参数获取
     if (req.query && req.query.key) {
       return req.query.key;
     }
