@@ -940,6 +940,7 @@
   <script>
     const API_BASE = '/admin';
     let refreshInterval;
+    let serverConnected = true;
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
@@ -955,9 +956,30 @@
     // Auto refresh every 5 seconds
     function startAutoRefresh() {
       refreshInterval = setInterval(() => {
+        checkConnection();
         fetchStats();
         fetchSources();
       }, 5000);
+    }
+
+    // Check server connection
+    async function checkConnection() {
+      try {
+        const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
+        if (!res.ok) throw new Error('Server error');
+        
+        if (!serverConnected) {
+          // 服务器恢复，刷新页面
+          serverConnected = true;
+          addLog('info', '服务器已恢复，刷新页面...');
+          setTimeout(() => location.reload(), 500);
+        }
+      } catch (err) {
+        if (serverConnected) {
+          serverConnected = false;
+          addLog('error', '服务器连接断开，等待重连...');
+        }
+      }
     }
 
     // Fetch all data
