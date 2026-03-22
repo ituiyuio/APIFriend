@@ -419,9 +419,11 @@ class SourceManager extends EventEmitter {
    * @param {string} name - 源名称
    */
   enableSource(name) {
+    const source = this.sources.get(name);
     const state = this.states.get(name);
     if (!state) return false;
     
+    if (source) source.enabled = true;
     state.status = SourceStatus.ENABLED;
     state.cooldownUntil = null;
     state.stats.consecutiveFailures = 0;
@@ -435,9 +437,11 @@ class SourceManager extends EventEmitter {
    * @param {string} name - 源名称
    */
   disableSource(name) {
+    const source = this.sources.get(name);
     const state = this.states.get(name);
     if (!state) return false;
     
+    if (source) source.enabled = false;
     state.status = SourceStatus.DISABLED;
     
     this.emit('source_disabled', { name });
