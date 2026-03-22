@@ -135,6 +135,14 @@ Visit `http://127.0.0.1:3000/admin/sources` to view:
 - Request trend charts
 - Enable/disable sources
 
+## Sponsor / 赞助支持
+
+If APIFriend helps you, consider supporting the project:
+
+如果 APIFriend 对你有帮助，欢迎赞助支持：
+
+❤️ https://afdian.com/a/Yomin
+
 ## License
 
 MIT
