@@ -1,0 +1,9 @@
+# Supported Funds
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsorship-button-in-your-repository
+
+github_sponsors: YOUR_USERNAME
+# open_collective: username
+# patreon: username
+# tidelift: package-name
+# community_bridge: project-name
+# custom: https://your-donation-platform-link

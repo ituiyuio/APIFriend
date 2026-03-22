@@ -19,7 +19,8 @@ const {
   createSourceManagerProvider, 
   createRateLimiterProvider,
   createFailoverDetectorProvider,
-  createStreamErrorHandlerProvider
+  createStreamErrorHandlerProvider,
+  createStatsRecorderProvider
 } = require('./src/statePersistence');
 const { createAdminRouter } = require('./src/adminApi');
 const { 
@@ -144,6 +145,10 @@ class APIFriendApp {
         'streamErrorHandler',
         ...Object.values(createStreamErrorHandlerProvider(this.streamErrorHandler))
       );
+      this.statePersistence.register(
+        'statsRecorder',
+        ...Object.values(createStatsRecorderProvider(this.statsRecorder))
+      );
       
       // 加载已保存的状态
       await this.statePersistence.load();
@@ -263,6 +268,7 @@ class APIFriendApp {
       statePersistence: this.statePersistence,
       statsRecorder: this.statsRecorder,
       config: this.config,
+      startTime: this.startTime,
       onLog: (level, msg, data) => this.logger[level](msg, data),
       onReloadConfig: () => this.reloadConfig()
     }));
@@ -366,93 +372,151 @@ class APIFriendApp {
    */
   async _handleAnthropicRequest(req, res) {
     const startTime = Date.now();
+    const maxRetries = this.failoverConfig?.maxRetries || 3;
+    const retryDelayMs = this.failoverConfig?.retryDelayMs || 1000;
     
-    try {
-      // 转换 Anthropic 格式到 OpenAI 格式
-      const anthropicBody = req.body;
-      const openaiBody = this._convertAnthropicToOpenAI(anthropicBody);
-      const isStream = openaiBody.stream;
-      const requestedModel = anthropicBody.model;
-      
+    // 转换 Anthropic 格式到 OpenAI 格式
+    const anthropicBody = req.body;
+    const openaiBody = this._convertAnthropicToOpenAI(anthropicBody);
+    const requestedModel = anthropicBody.model;
+    
+    let currentSource = null;
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries) {
       // 选择源
-      const selected = this.sourceManager.selectSource(requestedModel);
-      if (!selected) {
-        return res.status(503).json({
-          type: 'error',
-          error: {
-            type: 'no_available_source',
-            message: 'No available source found'
-          }
-        });
+      if (!currentSource) {
+        const selected = this.sourceManager.selectSource(requestedModel);
+        if (!selected) {
+          return res.status(503).json({
+            type: 'error',
+            error: {
+              type: 'no_available_source',
+              message: 'No available source found'
+            }
+          });
+        }
+        currentSource = selected;
       }
       
       // 构建请求体（应用模型映射）
       const requestBody = {
         ...openaiBody,
-        model: selected.mappedModel || openaiBody.model
+        model: currentSource.mappedModel || openaiBody.model
       };
       
-      // 转发请求
-      const result = await this.proxy.forward(
-        selected.source,
-        '/chat/completions',
-        'POST',
-        requestBody,
-        { 'content-type': 'application/json' }
-      );
-      
-      const duration = Date.now() - startTime;
-      
-      if (!result.success) {
-        this.sourceManager.markFailure(selected.source.name, result.errorType, {
+      try {
+        // 转发请求
+        const result = await this.proxy.forward(
+          currentSource.source,
+          '/chat/completions',
+          'POST',
+          requestBody,
+          { 'content-type': 'application/json' }
+        );
+        
+        if (result.success) {
+          // 标记成功
+          this.sourceManager.markSuccess(currentSource.source.name);
+          
+          // 流式响应
+          if (result.isStream) {
+            return await this._handleAnthropicStreamResponse(res, result.response, anthropicBody.model, currentSource.source.name, startTime);
+          }
+          
+          // 非流式响应
+          return await this._handleAnthropicNonStreamResponse(res, result.response, anthropicBody.model, currentSource.source.name, startTime);
+        }
+        
+        // 失败，标记并尝试切换源
+        this.sourceManager.markFailure(currentSource.source.name, result.errorType, {
           type: result.errorType,
           message: result.error || result.message,
           statusCode: result.statusCode
         });
         
-        this.logger.error('Anthropic proxy request failed', {
+        this.logger.warn('Anthropic proxy request failed, trying next source', {
           path: req.path,
-          source: selected.source.name,
+          source: currentSource.source.name,
           error: result.error,
-          duration
+          errorType: result.errorType
         });
         
-        return res.status(result.statusCode || 502).json({
-          type: 'error',
-          error: {
-            type: 'proxy_error',
-            message: result.message || (typeof result.error === 'string' ? result.error : JSON.stringify(result.error))
-          }
+        // 认证错误不重试
+        if (result.errorType === 'auth_error') {
+          return res.status(result.statusCode || 502).json({
+            type: 'error',
+            error: {
+              type: 'proxy_error',
+              message: result.message || 'Authentication failed'
+            }
+          });
+        }
+        
+        // 选择下一个源
+        const nextSource = this.sourceManager.selectNextSource(currentSource.source.name, requestedModel);
+        
+        if (!nextSource) {
+          // 没有可用源了
+          return res.status(503).json({
+            type: 'error',
+            error: {
+              type: 'all_sources_failed',
+              message: 'All sources are unavailable'
+            }
+          });
+        }
+        
+        // 切换到下一个源
+        currentSource = nextSource;
+        retryCount++;
+        
+        // 延迟重试
+        if (retryDelayMs > 0) {
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+        }
+        
+      } catch (err) {
+        this.logger.error('Anthropic proxy request error', {
+          path: req.path,
+          error: err.message,
+          stack: err.stack
         });
+        
+        this.sourceManager.markFailure(currentSource.source.name, 'network_error', {
+          type: 'network_error',
+          message: err.message
+        });
+        
+        // 尝试下一个源
+        const nextSource = this.sourceManager.selectNextSource(currentSource.source.name, requestedModel);
+        if (!nextSource) {
+          if (!res.headersSent) {
+            return res.status(502).json({
+              type: 'error',
+              error: {
+                type: 'proxy_error',
+                message: err.message
+              }
+            });
+          }
+          return;
+        }
+        
+        currentSource = nextSource;
+        retryCount++;
       }
-      
-      // 标记成功
-      this.sourceManager.markSuccess(selected.source.name);
-      
-      // 流式响应
-      if (result.isStream) {
-        return await this._handleAnthropicStreamResponse(res, result.response, anthropicBody.model, selected.source.name, startTime);
-      }
-      
-      // 非流式响应
-      return await this._handleAnthropicNonStreamResponse(res, result.response, anthropicBody.model, selected.source.name, startTime);
-      
-    } catch (err) {
-      this.logger.error('Anthropic proxy request error', {
-        path: req.path,
-        error: err.message,
-        stack: err.stack
+    }
+    
+    // 超过最大重试次数
+    if (!res.headersSent) {
+      return res.status(503).json({
+        type: 'error',
+        error: {
+          type: 'max_retries_exceeded',
+          message: `Failed after ${maxRetries} retries`
+        }
       });
-      
-      if (!res.headersSent) {
-        res.status(500).json({
-          type: 'error',
-          error: {
-            type: 'internal_error',
-            message: err.message
-          }
-        });
-      }
     }
   }
   
@@ -484,7 +548,11 @@ class APIFriendApp {
     res.write(`event: message_start\ndata: ${JSON.stringify(messageStart)}\n\n`);
     
     let hasStartedContent = false;
+    let hasStartedToolUse = false;
+    let currentToolCall = null; // 用于累积 tool_call 参数
+    let toolCallIndex = 0;
     let fullText = '';
+    let sseBuffer = ''; // 用于处理跨 chunk 的 SSE 数据
     
     try {
       const reader = upstreamResponse.body.getReader();
@@ -498,7 +566,11 @@ class APIFriendApp {
           if (hasStartedContent) {
             res.write(`event: content_block_stop\ndata: {"type":"content_block_stop","index":0}\n\n`);
           }
-          res.write(`event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":0}}\n\n`);
+          if (hasStartedToolUse) {
+            res.write(`event: content_block_stop\ndata: {"type":"content_block_stop","index":${hasStartedContent ? 1 : 0}}\n\n`);
+          }
+          const stopReason = currentToolCall ? 'tool_use' : 'end_turn';
+          res.write(`event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"${stopReason}"},"usage":{"output_tokens":0}}\n\n`);
           res.write(`event: message_stop\ndata: {}\n\n`);
           res.end();
           
@@ -525,37 +597,84 @@ class APIFriendApp {
         
         const chunk = decoder.decode(value, { stream: true });
         fullText += chunk;
+        sseBuffer += chunk;
         
-        // 解析 OpenAI SSE 格式
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') continue;
-            
-            try {
-              const parsed = JSON.parse(data);
-              const delta = parsed.choices?.[0]?.delta;
+        // 按双换行符分割完整的 SSE 事件，保留最后一个不完整的部分
+        const events = sseBuffer.split('\n\n');
+        sseBuffer = events.pop() || ''; // 保留最后一个可能不完整的部分
+        
+        // 处理完整的 SSE 事件
+        for (const event of events) {
+          const lines = event.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') continue;
+              if (!data) continue;
               
-              if (delta?.content) {
-                // 首次输出内容时发送 content_block_start
-                if (!hasStartedContent) {
-                  hasStartedContent = true;
-                  res.write(`event: content_block_start\ndata: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n\n`);
+              try {
+                const parsed = JSON.parse(data);
+                const delta = parsed.choices?.[0]?.delta;
+                
+                // 处理文本内容
+                if (delta?.content) {
+                  // 首次输出内容时发送 content_block_start
+                  if (!hasStartedContent) {
+                    hasStartedContent = true;
+                    res.write(`event: content_block_start\ndata: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n\n`);
+                  }
+                  
+                  // 使用 JSON.stringify 正确转义并发送内容
+                  res.write(`event: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":${JSON.stringify(delta.content)}}}\n\n`);
                 }
                 
-                // 转义并发送内容
-                const escapedContent = delta.content
-                  .replace(/\\/g, '\\\\')
-                  .replace(/"/g, '\\"')
-                  .replace(/\n/g, '\\n')
-                  .replace(/\r/g, '\\r')
-                  .replace(/\t/g, '\\t');
-                
-                res.write(`event: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"${escapedContent}"}}\n\n`);
+                // 处理工具调用
+                if (delta?.tool_calls && delta.tool_calls.length > 0) {
+                  for (const toolCallDelta of delta.tool_calls) {
+                    // 工具调用开始
+                    if (toolCallDelta.function?.name) {
+                      const blockIndex = hasStartedContent ? 1 : 0;
+                      if (!hasStartedToolUse) {
+                        hasStartedToolUse = true;
+                        toolCallIndex = blockIndex;
+                        currentToolCall = {
+                          id: toolCallDelta.id || `call_${Date.now()}`,
+                          name: toolCallDelta.function.name,
+                          arguments: ''
+                        };
+                        res.write(`event: content_block_start\ndata: ${JSON.stringify({
+                          type: "content_block_start",
+                          index: blockIndex,
+                          content_block: {
+                            type: "tool_use",
+                            id: currentToolCall.id,
+                            name: currentToolCall.name,
+                            input: {}
+                          }
+                        })}\n\n`);
+                      }
+                    }
+                    
+                    // 工具参数增量
+                    if (toolCallDelta.function?.arguments) {
+                      if (currentToolCall) {
+                        currentToolCall.arguments += toolCallDelta.function.arguments;
+                      }
+                      const blockIndex = hasStartedContent ? 1 : 0;
+                      res.write(`event: content_block_delta\ndata: ${JSON.stringify({
+                        type: "content_block_delta",
+                        index: blockIndex,
+                        delta: {
+                          type: "input_json_delta",
+                          partial_json: toolCallDelta.function.arguments
+                        }
+                      })}\n\n`);
+                    }
+                  }
+                }
+              } catch (e) {
+                // 忽略解析错误，可能是不完整的数据
               }
-            } catch (e) {
-              // 忽略解析错误
             }
           }
         }
@@ -621,22 +740,62 @@ class APIFriendApp {
    * 将 OpenAI 响应格式转换为 Anthropic 格式
    */
   _convertOpenAIToAnthropic(openaiResponse, model) {
-    const content = openaiResponse.choices?.[0]?.message?.content || '';
+    const message = openaiResponse.choices?.[0]?.message;
     const inputTokens = openaiResponse.usage?.prompt_tokens || 0;
     const outputTokens = openaiResponse.usage?.completion_tokens || 0;
+    const finishReason = openaiResponse.choices?.[0]?.finish_reason;
+    
+    const content = [];
+    
+    // 添加文本内容
+    if (message?.content) {
+      content.push({
+        type: 'text',
+        text: message.content
+      });
+    }
+    
+    // 添加工具调用
+    if (message?.tool_calls && message.tool_calls.length > 0) {
+      for (const toolCall of message.tool_calls) {
+        let input = {};
+        try {
+          input = JSON.parse(toolCall.function.arguments || '{}');
+        } catch (e) {
+          // 解析失败时保持空对象
+        }
+        content.push({
+          type: 'tool_use',
+          id: toolCall.id,
+          name: toolCall.function.name,
+          input: input
+        });
+      }
+    }
+    
+    // 如果没有内容，添加空文本
+    if (content.length === 0) {
+      content.push({
+        type: 'text',
+        text: ''
+      });
+    }
+    
+    // 确定停止原因
+    let stopReason = 'end_turn';
+    if (finishReason === 'length') {
+      stopReason = 'max_tokens';
+    } else if (finishReason === 'tool_calls' || message?.tool_calls) {
+      stopReason = 'tool_use';
+    }
     
     return {
       id: `msg_${Date.now()}`,
       type: 'message',
       role: 'assistant',
       model: model,
-      content: [
-        {
-          type: 'text',
-          text: content
-        }
-      ],
-      stop_reason: openaiResponse.choices?.[0]?.finish_reason === 'length' ? 'max_tokens' : 'end_turn',
+      content: content,
+      stop_reason: stopReason,
       stop_sequence: null,
       usage: {
         input_tokens: inputTokens,
@@ -663,23 +822,72 @@ class APIFriendApp {
     if (anthropicBody.messages && Array.isArray(anthropicBody.messages)) {
       for (const msg of anthropicBody.messages) {
         // 处理 content 可能是字符串或数组的情况
-        let content = msg.content;
-        if (Array.isArray(content)) {
-          // 提取文本内容
-          content = content
-            .filter(c => c.type === 'text')
-            .map(c => c.text)
-            .join('\n');
-        }
+        const content = msg.content;
         
-        messages.push({
-          role: msg.role,
-          content: content
-        });
+        if (typeof content === 'string') {
+          messages.push({
+            role: msg.role,
+            content: content
+          });
+        } else if (Array.isArray(content)) {
+          // 分离不同类型的内容
+          const textParts = content.filter(c => c.type === 'text');
+          const toolResults = content.filter(c => c.type === 'tool_result');
+          const toolUses = content.filter(c => c.type === 'tool_use');
+          
+          // 文本内容
+          if (textParts.length > 0) {
+            const textContent = textParts.map(c => c.text).join('\n');
+            messages.push({
+              role: msg.role,
+              content: textContent
+            });
+          }
+          
+          // 工具结果 (Anthropic: tool_result -> OpenAI: tool role)
+          for (const result of toolResults) {
+            let resultContent = result.content;
+            if (typeof resultContent === 'object') {
+              resultContent = JSON.stringify(resultContent);
+            }
+            messages.push({
+              role: 'tool',
+              tool_call_id: result.tool_use_id,
+              content: resultContent || ''
+            });
+          }
+          
+          // 工具使用 (Anthropic: tool_use in assistant -> OpenAI: tool_calls)
+          if (toolUses.length > 0 && msg.role === 'assistant') {
+            const toolCalls = toolUses.map(tu => ({
+              id: tu.id,
+              type: 'function',
+              function: {
+                name: tu.name,
+                arguments: typeof tu.input === 'object' ? JSON.stringify(tu.input) : (tu.input || '{}')
+              }
+            }));
+            
+            // 添加 assistant 消息，包含 tool_calls
+            const assistantMsg = {
+              role: 'assistant',
+              content: textParts.length > 0 ? textParts.map(c => c.text).join('\n') : null,
+              tool_calls: toolCalls
+            };
+            messages.push(assistantMsg);
+          }
+          
+          // 如果只有文本且没有特殊处理
+          if (textParts.length > 0 && toolResults.length === 0 && toolUses.length === 0) {
+            // 已经在上面处理了
+          } else if (textParts.length === 0 && toolResults.length === 0 && toolUses.length === 0) {
+            // 空内容
+          }
+        }
       }
     }
     
-    return {
+    const openaiBody = {
       model: anthropicBody.model,
       messages: messages,
       stream: anthropicBody.stream || false,
@@ -688,71 +896,20 @@ class APIFriendApp {
       top_p: anthropicBody.top_p,
       stop: anthropicBody.stop_sequences
     };
-  }
-  
-  /**
-   * 创建 Anthropic 流式响应转换器
-   * 将 OpenAI SSE 格式转换为 Anthropic SSE 格式
-   */
-  _createAnthropicStreamTransformer(model, messageId) {
-    let hasStartedContent = false;
     
-    return (openaiChunk) => {
-      try {
-        // 解析 OpenAI chunk
-        if (!openaiChunk || openaiChunk === '[DONE]') {
-          // 发送结束事件
-          const events = [];
-          events.push(`event: content_block_stop\ndata: {"type":"content_block_stop","index":0}\n\n`);
-          events.push(`event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":0}}\n\n`);
-          events.push(`event: message_stop\ndata: {}\n\n`);
-          return events.join('');
+    // 转换工具定义
+    if (anthropicBody.tools && anthropicBody.tools.length > 0) {
+      openaiBody.tools = anthropicBody.tools.map(tool => ({
+        type: 'function',
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.input_schema
         }
-        
-        const data = JSON.parse(openaiChunk);
-        const delta = data.choices?.[0]?.delta;
-        const finishReason = data.choices?.[0]?.finish_reason;
-        
-        if (!delta && !finishReason) return null;
-        
-        const events = [];
-        
-        // 处理内容
-        if (delta?.content) {
-          // 首次输出内容时发送 content_block_start
-          if (!hasStartedContent) {
-            hasStartedContent = true;
-            events.push(`event: content_block_start\ndata: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n\n`);
-          }
-          
-          // 转义 JSON 特殊字符
-          const escapedContent = delta.content
-            .replace(/\\/g, '\\\\')
-            .replace(/"/g, '\\"')
-            .replace(/\n/g, '\\n')
-            .replace(/\r/g, '\\r')
-            .replace(/\t/g, '\\t');
-          
-          events.push(`event: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"${escapedContent}"}}\n\n`);
-        }
-        
-        // 处理结束
-        if (finishReason) {
-          if (hasStartedContent) {
-            events.push(`event: content_block_stop\ndata: {"type":"content_block_stop","index":0}\n\n`);
-          }
-          
-          const stopReason = finishReason === 'length' ? 'max_tokens' : 'end_turn';
-          events.push(`event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"${stopReason}"},"usage":{"output_tokens":0}}\n\n`);
-          events.push(`event: message_stop\ndata: {}\n\n`);
-        }
-        
-        return events.length > 0 ? events.join('') : null;
-      } catch (e) {
-        this.logger.warn('Stream transform error', { error: e.message });
-        return null;
-      }
-    };
+      }));
+    }
+    
+    return openaiBody;
   }
   
   /**
@@ -830,6 +987,9 @@ class APIFriendApp {
     
     // 初始化
     await this.initialize();
+    
+    // 设置启动时间（在创建 app 之前）
+    this.startTime = Date.now();
     
     // 创建 Express 应用
     this.app = this._createExpressApp();

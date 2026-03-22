@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APIFriend - 智能 API 中转路由</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Source+Serif+4:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <style>
+    @layer components {
+      .liquid-glass {
+        background: rgba(255,255,255,0.01);
+        background-blend-mode: luminosity;
+        backdrop-filter: blur(4px);
+        border: none;
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .liquid-glass::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        padding: 1.4px;
+        background: linear-gradient(180deg, 
+          rgba(255,255,255,0.45) 0%, 
+          rgba(255,255,255,0.15) 20%, 
+          transparent 40%, 
+          transparent 60%, 
+          rgba(255,255,255,0.15) 80%, 
+          rgba(255,255,255,0.45) 100%
+        );
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .liquid-glass-strong {
+        background: rgba(255,255,255,0.02);
+        background-blend-mode: luminosity;
+        backdrop-filter: blur(50px);
+        border: none;
+        box-shadow: 4px 4px 4px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.15);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .liquid-glass-strong::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        padding: 1.4px;
+        background: linear-gradient(180deg, 
+          rgba(255,255,255,0.5) 0%, 
+          rgba(255,255,255,0.2) 20%, 
+          transparent 40%, 
+          transparent 60%, 
+          rgba(255,255,255,0.2) 80%, 
+          rgba(255,255,255,0.5) 100%
+        );
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+    }
+
+    :root {
+      --radius: 1rem;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      color: white;
+      overflow-x: hidden;
+    }
+
+    /* Video Background */
+    .video-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    /* Gradient background */
+    .gradient-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      background: 
+        radial-gradient(ellipse at 0% 0%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 100% 100%, rgba(255, 119, 115, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 0%, rgba(78, 205, 196, 0.08) 0%, transparent 40%),
+        linear-gradient(180deg, #0c0c0c 0%, #111111 50%, #0a0a0a 100%);
+    }
+
+    /* Main Container */
+    .main-container {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* Left Panel */
+    .left-panel {
+      width: 52%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding: 24px;
+    }
+
+    .left-panel .glass-overlay {
+      position: absolute;
+      inset: 24px;
+      border-radius: 2rem;
+      z-index: 0;
+    }
+
+    .left-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* Right Panel */
+    .right-panel {
+      width: 48%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+    }
+
+    @media (max-width: 1024px) {
+      .main-container {
+        flex-direction: column;
+      }
+      .left-panel, .right-panel {
+        width: 100%;
+        min-height: auto;
+      }
+      .right-panel {
+        display: none;
+      }
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #4f8cff 0%, #a855f7 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+
+    .menu-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: white;
+      font-family: inherit;
+    }
+
+    .menu-btn:hover {
+      transform: scale(1.05);
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .menu-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Hero Section */
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    /* CTA Buttons Wrapper */
+    .cta-wrapper {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    .hero-logo {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #4f8cff 0%, #a855f7 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      margin-bottom: 24px;
+      box-shadow: 0 0 60px rgba(79, 140, 255, 0.4);
+    }
+
+    .hero h1 {
+      font-size: 3.5rem;
+      letter-spacing: -0.05em;
+      color: white;
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 1024px) {
+      .hero h1 {
+        font-size: 4.5rem;
+      }
+    }
+
+    .hero h1 em, .hero h1 i, .hero h1 .italic {
+      font-family: 'Source Serif 4', serif;
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: rgba(255, 255, 255, 0.6);
+      max-width: 500px;
+      margin-bottom: 32px;
+      font-weight: 400;
+    }
+
+    /* CTA Button */
+    .cta-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 32px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1rem;
+      font-weight: 500;
+      color: white;
+      white-space: nowrap;
+      background: linear-gradient(135deg, #4f8cff 0%, #a855f7 100%);
+      box-shadow: 0 4px 20px rgba(79, 140, 255, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .cta-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 25px rgba(79, 140, 255, 0.5);
+    }
+
+    .cta-btn:active {
+      transform: scale(0.95);
+    }
+
+    .cta-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Pills */
+    .pills {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .pill {
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.2s ease;
+    }
+
+    .pill:hover {
+      transform: scale(1.05);
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Social Pills */
+    .social-pill {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Bottom Quote */
+    .bottom-quote {
+      padding: 24px;
+      text-align: center;
+    }
+
+    .quote-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 12px;
+    }
+
+    .quote-text {
+      font-size: 1.25rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 16px;
+    }
+
+    .quote-text em {
+      font-family: 'Source Serif 4', serif;
+      font-style: italic;
+    }
+
+    .quote-author {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .quote-line {
+      width: 40px;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Right Panel Content */
+    .right-top {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 8px 0;
+      margin-bottom: 32px;
+    }
+
+    .social-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Themed Button - Main Brand Color */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      font-family: inherit;
+    }
+
+    .btn-themed {
+      background: linear-gradient(135deg, #4f8cff 0%, #a855f7 100%);
+      box-shadow: 0 4px 15px rgba(79, 140, 255, 0.4);
+      border: none;
+      color: white;
+    }
+
+    .btn-themed:hover {
+      box-shadow: 0 6px 20px rgba(79, 140, 255, 0.5);
+      transform: scale(1.02);
+    }
+
+    /* Icon Button Style */
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: white;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: scale(1.05);
+    }
+
+    .social-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .social-icon:hover {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .account-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: linear-gradient(135deg, #4f8cff 0%, #a855f7 100%);
+      box-shadow: 0 4px 15px rgba(79, 140, 255, 0.3);
+      color: white;
+    }
+
+    .account-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(79, 140, 255, 0.4);
+    }
+
+    /* Community Card */
+    .community-card {
+      width: 220px;
+      padding: 20px;
+      border-radius: 1.5rem;
+    }
+
+    .community-card h3 {
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .community-card p {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 400;
+    }
+
+    /* Features Section */
+    .features-section {
+      margin-top: auto;
+      padding: 24px;
+      border-radius: 2.5rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .feature-card {
+      padding: 20px;
+      border-radius: 1.5rem;
+      transition: transform 0.2s ease;
+    }
+
+    .feature-card:hover {
+      transform: scale(1.02);
+    }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(79, 140, 255, 0.3) 0%, rgba(168, 85, 247, 0.3) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .feature-card h4 {
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .feature-card p {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 400;
+    }
+
+    /* Bottom Feature Card */
+    .bottom-feature {
+      padding: 16px;
+      border-radius: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: transform 0.2s ease;
+    }
+
+    .bottom-feature:hover {
+      transform: scale(1.02);
+    }
+
+    .feature-image {
+      width: 96px;
+      height: 64px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(79, 140, 255, 0.3), rgba(168, 85, 247, 0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .feature-content {
+      flex: 1;
+    }
+
+    .feature-content h4 {
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .feature-content p {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 400;
+    }
+
+    .feature-add {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* SVG Icons */
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: inline-block;
+    }
+
+    .icon-sm {
+      width: 16px;
+      height: 16px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Video Background -->
+  <div class="gradient-bg"></div>
+  
+  <div class="main-container">
+    <!-- Left Panel -->
+    <div class="left-panel">
+      <div class="glass-overlay liquid-glass-strong"></div>
+      <div class="left-content">
+        <!-- Nav -->
+        <nav class="nav">
+          <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <span class="logo-text">apifriend</span>
+          </div>
+          <div class="menu-btn liquid-glass">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+            <span>Menu</span>
+          </div>
+        </nav>
+
+        <!-- Hero -->
+        <div class="hero">
+          <div class="hero-logo">⚡</div>
+          <h1>Innovating the <em>spirit</em> of API routing</h1>
+          <p>智能 API 中转路由，自动故障切换，多源负载均衡，让您的 AI 应用永不停摆。</p>
+          
+          <div class="cta-wrapper">
+            <a href="https://github.com/YOUR_USERNAME/APIFriend" class="cta-btn" target="_blank">
+              <span>⭐ Star on GitHub</span>
+              <div class="cta-icon">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/>
+                </svg>
+              </div>
+            </a>
+
+            <a href="https://github.com/YOUR_USERNAME/APIFriend/sponsors" class="cta-btn" target="_blank">
+              <span>Support This Project</span>
+              <div class="cta-icon">
+                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+              </div>
+            </a>
+          </div>
+
+          <div class="pills">
+            <span class="pill liquid-glass">Auto Failover</span>
+            <span class="pill liquid-glass">Multi-Source</span>
+            <span class="pill liquid-glass">Rate Limiting</span>
+            <span class="pill liquid-glass" style="background: linear-gradient(135deg, rgba(79, 140, 255, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%); border: 1px solid rgba(168, 85, 247, 0.3);">MIT License</span>
+          </div>
+        </div>
+
+        <!-- Bottom Quote -->
+        <div class="bottom-quote">
+          <div class="quote-label">VISIONARY DESIGN</div>
+          <p class="quote-text">"<em>Seamless</em> API orchestration, <em>infinite</em> reliability."</p>
+          <div class="quote-author">
+            <span class="quote-line"></span>
+            <span>APIFRIEND TEAM</span>
+            <span class="quote-line"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+      <!-- Top Bar -->
+      <div class="right-top">
+        <div class="social-pill liquid-glass">
+          <a href="#" class="social-icon" title="Twitter">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+          </a>
+          <a href="#" class="social-icon" title="LinkedIn">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/>
+            </svg>
+          </a>
+          <a href="#" class="social-icon" title="GitHub">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+            </svg>
+          </a>
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </div>
+        <div class="account-btn liquid-glass" title="Account">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3l1.912 5.813a2 2 0 001.272 1.272L21 12l-5.813 1.912a2 2 0 00-1.272 1.272L12 21l-1.912-5.813a2 2 0 00-1.272-1.272L3 12l5.813-1.912a2 2 0 001.272-1.272L12 3z"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Community Card -->
+      <div class="community-card liquid-glass">
+        <h3>Join our community</h3>
+        <p>Join developers building resilient AI applications with APIFriend.</p>
+      </div>
+
+      <!-- Sponsor Card -->
+      <div class="community-card liquid-glass" style="background: linear-gradient(135deg, rgba(79, 140, 255, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%); border: 1px solid rgba(168, 85, 247, 0.2); margin-top: 16px;">
+        <h3 style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: rgba(168, 85, 247, 0.9);">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          Support This Project
+        </h3>
+        <p style="margin-bottom: 12px; font-size: 0.8rem;">Open-source forever. Your sponsorship helps keep APIFriend free and actively developed.</p>
+        <a href="https://github.com/YOUR_USERNAME/APIFriend/sponsors" class="btn btn-themed" style="width: 100%; justify-content: center; padding: 10px 16px; font-size: 0.8rem; white-space: nowrap; color: white;" target="_blank">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; width: 16px; height: 16px;">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+          Sponsor This Project
+        </a>
+      </div>
+
+      <!-- Features Section -->
+      <div class="features-section liquid-glass-strong">
+        <div class="features-grid">
+          <div class="feature-card liquid-glass">
+            <div class="feature-icon">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 4V2"></path>
+                <path d="M15 16v-2"></path>
+                <path d="M8 9h2"></path>
+                <path d="M20 9h2"></path>
+                <path d="M17.8 11.8L19 13"></path>
+                <path d="M15 9h0"></path>
+                <path d="M17.8 6.2L19 5"></path>
+                <path d="m3 21 9-9"></path>
+                <path d="M12.2 6.2L11 5"></path>
+              </svg>
+            </div>
+            <h4>Smart Routing</h4>
+            <p>AI-powered request routing with automatic failover</p>
+          </div>
+          <div class="feature-card liquid-glass">
+            <div class="feature-icon">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+              </svg>
+            </div>
+            <h4>Analytics</h4>
+            <p>Real-time monitoring and usage statistics</p>
+          </div>
+        </div>
+        
+        <div class="bottom-feature liquid-glass">
+          <div class="feature-image">🔐</div>
+          <div class="feature-content">
+            <h4>Enterprise Security</h4>
+            <p>End-to-end encryption with secure key management</p>
+          </div>
+          <div class="feature-add">+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

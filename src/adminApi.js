@@ -57,6 +57,7 @@ function createAdminRouter(options = {}) {
     statePersistence,
     statsRecorder,
     config,
+    startTime,
     onLog = console.log,
     onReloadConfig
   } = options;
@@ -267,6 +268,56 @@ function createAdminRouter(options = {}) {
       });
     } catch (err) {
       onLog('error', `Failed to delete source: ${err.message}`);
+      res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+  
+  /**
+   * POST /admin/sources/:name/toggle
+   * 切换源状态
+   */
+  router.post('/sources/:name/toggle', async (req, res) => {
+    try {
+      const { name } = req.params;
+      
+      const source = sourceManager?.getSource(name);
+      if (!source) {
+        return res.status(404).json({
+          success: false,
+          error: 'Source not found'
+        });
+      }
+      
+      // 保存原始状态
+      const wasEnabled = source.enabled;
+      
+      // 切换状态
+      if (wasEnabled) {
+        sourceManager?.disableSource(name);
+        onLog('info', `Source disabled: ${name}`);
+      } else {
+        sourceManager?.enableSource(name);
+        onLog('info', `Source enabled: ${name}`);
+      }
+      
+      // 保存到 config.json
+      saveSourcesToConfig(sourceManager, config);
+      
+      // 触发状态持久化
+      if (statePersistence) {
+        await statePersistence.save(true);
+      }
+      
+      res.json({
+        success: true,
+        message: `Source '${name}' ${wasEnabled ? 'disabled' : 'enabled'}`,
+        data: sourceManager?.getSourceSummary(name)
+      });
+    } catch (err) {
+      onLog('error', `Failed to toggle source: ${err.message}`);
       res.status(500).json({
         success: false,
         error: err.message
@@ -633,9 +684,13 @@ function createAdminRouter(options = {}) {
    * 健康检查
    */
   router.get('/health', (req, res) => {
+    const uptime = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+    
     res.json({
       success: true,
       status: 'healthy',
+      uptime,
+      startTime: startTime ? new Date(startTime).toISOString() : null,
       timestamp: new Date().toISOString()
     });
   });

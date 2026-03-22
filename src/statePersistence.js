@@ -408,11 +408,24 @@ function createStreamErrorHandlerProvider(handler) {
   };
 }
 
+/**
+ * 创建用于 StatsRecorder 的状态提供者
+ * @param {StatsRecorder} statsRecorder - 统计记录器实例
+ * @returns {Object} 状态提供者
+ */
+function createStatsRecorderProvider(statsRecorder) {
+  return {
+    getState: () => statsRecorder.export(),
+    setState: (state) => statsRecorder.import(state)
+  };
+}
+
 module.exports = {
   StatePersistence,
   PersistenceEvent,
   createSourceManagerProvider,
   createRateLimiterProvider,
   createFailoverDetectorProvider,
-  createStreamErrorHandlerProvider
+  createStreamErrorHandlerProvider,
+  createStatsRecorderProvider
 };

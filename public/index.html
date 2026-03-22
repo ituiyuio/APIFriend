@@ -6,28 +6,74 @@
   <title>APIFriend Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
   <style>
+    @layer components {
+      .liquid-glass {
+        background: rgba(255,255,255,0.01);
+        background-blend-mode: luminosity;
+        backdrop-filter: blur(4px);
+        border: none;
+        box-shadow: inset 0 1px 1px rgba(255,255,255,0.1);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .liquid-glass::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        padding: 1.4px;
+        background: linear-gradient(180deg, 
+          rgba(255,255,255,0.45) 0%, 
+          rgba(255,255,255,0.15) 20%, 
+          transparent 40%, 
+          transparent 60%, 
+          rgba(255,255,255,0.15) 80%, 
+          rgba(255,255,255,0.45) 100%
+        );
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .liquid-glass-strong {
+        background: rgba(255,255,255,0.02);
+        background-blend-mode: luminosity;
+        backdrop-filter: blur(50px);
+        border: none;
+        box-shadow: 4px 4px 4px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.15);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .liquid-glass-strong::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        padding: 1.4px;
+        background: linear-gradient(180deg, 
+          rgba(255,255,255,0.5) 0%, 
+          rgba(255,255,255,0.2) 20%, 
+          transparent 40%, 
+          transparent 60%, 
+          rgba(255,255,255,0.2) 80%, 
+          rgba(255,255,255,0.5) 100%
+        );
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+    }
+
     :root {
-      --bg-primary: #0a0a0f;
-      --bg-secondary: #12121a;
-      --bg-card: rgba(20, 20, 30, 0.8);
-      --bg-glass: rgba(255, 255, 255, 0.03);
-      --border-glass: rgba(255, 255, 255, 0.08);
-      --text-primary: #f0f0f5;
-      --text-secondary: #8888a0;
-      --text-muted: #555566;
-      --accent-blue: #4f8cff;
-      --accent-green: #22c55e;
-      --accent-orange: #f59e0b;
-      --accent-red: #ef4444;
-      --accent-purple: #a855f7;
-      --accent-cyan: #06b6d4;
-      --gradient-primary: linear-gradient(135deg, #4f8cff 0%, #a855f7 100%);
-      --gradient-success: linear-gradient(135deg, #22c55e 0%, #06b6d4 100%);
-      --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-      --shadow-glow: 0 0 40px rgba(79, 140, 255, 0.15);
-      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --radius: 1rem;
     }
 
     * {
@@ -36,34 +82,38 @@
       box-sizing: border-box;
     }
 
+    html, body {
+      height: 100%;
+    }
+
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 500;
+      color: white;
+      overflow-x: hidden;
       line-height: 1.6;
     }
 
-    /* Animated background */
-    .bg-pattern {
+    /* Gradient Background */
+    .gradient-bg {
       position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      bottom: 0;
-      background: 
-        radial-gradient(ellipse at 20% 20%, rgba(79, 140, 255, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
-      pointer-events: none;
+      width: 100%;
+      height: 100%;
       z-index: 0;
+      background: 
+        radial-gradient(ellipse at 0% 0%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 100% 100%, rgba(255, 119, 115, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 0%, rgba(78, 205, 196, 0.08) 0%, transparent 40%),
+        linear-gradient(180deg, #0c0c0c 0%, #111111 50%, #0a0a0a 100%);
     }
 
+    /* Container */
     .container {
       position: relative;
-      z-index: 1;
-      max-width: 1400px;
-      margin: 0 auto;
+      z-index: 10;
+      min-height: 100vh;
       padding: 24px;
     }
 
@@ -72,9 +122,9 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 32px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--border-glass);
+      margin-bottom: 24px;
+      padding: 16px 24px;
+      border-radius: 2rem;
     }
 
     .logo {
@@ -84,29 +134,27 @@
     }
 
     .logo-icon {
-      width: 48px;
-      height: 48px;
-      background: var(--gradient-primary);
-      border-radius: 12px;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #4f8cff 0%, #a855f7 100%);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 24px;
-      box-shadow: var(--shadow-glow);
+      font-size: 20px;
+      box-shadow: 0 0 30px rgba(79, 140, 255, 0.4);
     }
 
     .logo-text h1 {
-      font-size: 24px;
-      font-weight: 700;
-      background: var(--gradient-primary);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.025em;
     }
 
     .logo-text p {
-      font-size: 13px;
-      color: var(--text-secondary);
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 400;
     }
 
     .header-actions {
@@ -114,113 +162,104 @@
       gap: 12px;
     }
 
+    /* Buttons */
     .btn {
-      padding: 10px 20px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      border: none;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 8px;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      color: white;
+      font-family: inherit;
+    }
+
+    .btn:hover {
+      transform: scale(1.05);
+    }
+
+    .btn:active {
+      transform: scale(0.95);
     }
 
     .btn-primary {
-      background: var(--gradient-primary);
-      color: white;
-      box-shadow: 0 4px 16px rgba(79, 140, 255, 0.3);
+      background: linear-gradient(135deg, #4f8cff 0%, #a855f7 100%);
+      box-shadow: 0 4px 20px rgba(79, 140, 255, 0.4);
     }
 
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 24px rgba(79, 140, 255, 0.4);
+    .btn-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
     }
 
-    .btn-secondary {
-      background: var(--bg-glass);
-      color: var(--text-primary);
-      border: 1px solid var(--border-glass);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    /* Stats Overview */
+    /* Stats Grid */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 1200px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .stat-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-glass);
-      border-radius: 16px;
       padding: 24px;
-      backdrop-filter: blur(20px);
-      transition: all 0.3s ease;
+      border-radius: 1.5rem;
+      transition: transform 0.2s ease;
     }
 
     .stat-card:hover {
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-card);
-    }
-
-    .stat-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
+      transform: scale(1.02);
     }
 
     .stat-icon {
       width: 44px;
       height: 44px;
       border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 20px;
+      margin-bottom: 16px;
     }
 
-    .stat-icon.blue { background: rgba(79, 140, 255, 0.15); color: var(--accent-blue); }
-    .stat-icon.green { background: rgba(34, 197, 94, 0.15); color: var(--accent-green); }
-    .stat-icon.orange { background: rgba(245, 158, 11, 0.15); color: var(--accent-orange); }
-    .stat-icon.purple { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
-
     .stat-value {
-      font-size: 32px;
-      font-weight: 700;
+      font-size: 2rem;
+      font-weight: 600;
       margin-bottom: 4px;
+      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .stat-label {
-      font-size: 14px;
-      color: var(--text-secondary);
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 400;
     }
 
-    .stat-change {
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-weight: 500;
-    }
-
-    .stat-change.positive {
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--accent-green);
-    }
-
-    .stat-change.negative {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--accent-red);
-    }
-
-    /* Main Content */
+    /* Main Grid */
     .main-grid {
       display: grid;
       grid-template-columns: 1fr 380px;
@@ -233,58 +272,50 @@
       }
     }
 
-    /* Sources Panel */
+    /* Panels */
     .panel {
-      background: var(--bg-card);
-      border: 1px solid var(--border-glass);
-      border-radius: 20px;
-      overflow: hidden;
-      backdrop-filter: blur(20px);
+      padding: 24px;
+      border-radius: 2rem;
     }
 
     .panel-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--border-glass);
+      margin-bottom: 20px;
     }
 
     .panel-title {
-      font-size: 16px;
-      font-weight: 600;
+      font-size: 1rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .panel-badge {
-      background: rgba(79, 140, 255, 0.15);
-      color: var(--accent-blue);
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
       font-weight: 500;
-    }
-
-    .panel-content {
-      padding: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
     }
 
     /* Source Cards */
     .source-card {
-      background: var(--bg-glass);
-      border: 1px solid var(--border-glass);
-      border-radius: 14px;
       padding: 20px;
+      border-radius: 1.25rem;
       margin-bottom: 12px;
-      transition: all 0.3s ease;
+      transition: transform 0.2s ease;
+    }
+
+    .source-card:hover {
+      transform: scale(1.01);
     }
 
     .source-card:last-child {
       margin-bottom: 0;
-    }
-
-    .source-card:hover {
-      border-color: rgba(255, 255, 255, 0.15);
-      background: rgba(255, 255, 255, 0.05);
     }
 
     .source-header {
@@ -301,10 +332,10 @@
     }
 
     .source-priority {
-      width: 32px;
-      height: 32px;
-      background: var(--gradient-primary);
-      border-radius: 8px;
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #4f8cff 0%, #a855f7 100%);
+      border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -313,45 +344,45 @@
     }
 
     .source-name {
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 2px;
+      font-size: 0.95rem;
+      font-weight: 500;
     }
 
     .source-url {
-      font-size: 12px;
-      color: var(--text-muted);
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.4);
       font-family: 'JetBrains Mono', monospace;
     }
 
     .source-status {
       padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 12px;
+      border-radius: 9999px;
+      font-size: 0.7rem;
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
     .status-enabled {
-      background: rgba(34, 197, 94, 0.15);
-      color: var(--accent-green);
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
     }
 
     .status-cooling {
-      background: rgba(245, 158, 11, 0.15);
-      color: var(--accent-orange);
+      background: rgba(245, 158, 11, 0.2);
+      color: #f59e0b;
     }
 
     .status-disabled {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--accent-red);
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
     }
 
+    /* Source Stats */
     .source-stats {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
+      gap: 8px;
       margin-bottom: 16px;
     }
 
@@ -363,14 +394,14 @@
     }
 
     .source-stat-value {
-      font-size: 18px;
+      font-size: 1.1rem;
       font-weight: 600;
       margin-bottom: 2px;
     }
 
     .source-stat-label {
-      font-size: 10px;
-      color: var(--text-muted);
+      font-size: 0.65rem;
+      color: rgba(255, 255, 255, 0.4);
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
@@ -384,49 +415,45 @@
       margin-bottom: 10px;
     }
 
-    .rate-limit-item:last-child {
-      margin-bottom: 0;
-    }
-
     .rate-limit-header {
       display: flex;
       justify-content: space-between;
       margin-bottom: 6px;
-      font-size: 12px;
+      font-size: 0.75rem;
     }
 
     .rate-limit-label {
-      color: var(--text-secondary);
+      color: rgba(255, 255, 255, 0.5);
     }
 
     .rate-limit-value {
-      color: var(--text-primary);
+      color: rgba(255, 255, 255, 0.8);
       font-family: 'JetBrains Mono', monospace;
     }
 
     .progress-bar {
-      height: 6px;
+      height: 4px;
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 3px;
+      border-radius: 2px;
       overflow: hidden;
     }
 
     .progress-fill {
       height: 100%;
-      border-radius: 3px;
+      border-radius: 2px;
       transition: width 0.5s ease;
     }
 
     .progress-fill.green {
-      background: var(--gradient-success);
+      background: linear-gradient(90deg, #22c55e, #06b6d4);
     }
 
     .progress-fill.orange {
-      background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%);
+      background: linear-gradient(90deg, #f59e0b, #eab308);
     }
 
     .progress-fill.red {
-      background: var(--gradient-warning);
+      background: linear-gradient(90deg, #ef4444, #f59e0b);
     }
 
     /* Source Actions */
@@ -435,52 +462,46 @@
       gap: 8px;
       margin-top: 16px;
       padding-top: 16px;
-      border-top: 1px solid var(--border-glass);
     }
 
     .action-btn {
       flex: 1;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.75rem;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s ease;
-      border: 1px solid var(--border-glass);
-      background: var(--bg-glass);
-      color: var(--text-primary);
+      transition: transform 0.2s ease;
+      font-family: inherit;
+      color: rgba(255, 255, 255, 0.8);
     }
 
     .action-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.02);
     }
 
     .action-btn.danger {
-      color: var(--accent-red);
+      color: #ef4444;
     }
 
-    .action-btn.danger:hover {
-      background: rgba(239, 68, 68, 0.15);
-    }
-
-    /* Logs Panel */
+    /* Logs */
     .logs-container {
-      height: 400px;
+      height: 350px;
       overflow-y: auto;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
+      font-size: 0.75rem;
       line-height: 1.8;
     }
 
     .log-entry {
       padding: 8px 12px;
-      border-radius: 6px;
+      border-radius: 8px;
       margin-bottom: 4px;
-      background: rgba(0, 0, 0, 0.2);
+      background: rgba(0, 0, 0, 0.3);
     }
 
     .log-time {
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.3);
       margin-right: 12px;
     }
 
@@ -489,20 +510,20 @@
       margin-right: 12px;
     }
 
-    .log-level.info { color: var(--accent-blue); }
-    .log-level.warn { color: var(--accent-orange); }
-    .log-level.error { color: var(--accent-red); }
-    .log-level.debug { color: var(--accent-purple); }
+    .log-level.info { color: #4f8cff; }
+    .log-level.warn { color: #f59e0b; }
+    .log-level.error { color: #ef4444; }
+    .log-level.debug { color: #a855f7; }
 
     .log-message {
-      color: var(--text-secondary);
+      color: rgba(255, 255, 255, 0.6);
     }
 
     /* Empty State */
     .empty-state {
       text-align: center;
       padding: 48px 24px;
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.4);
     }
 
     .empty-icon {
@@ -511,7 +532,7 @@
       opacity: 0.5;
     }
 
-    /* Loading Animation */
+    /* Loading */
     .loading {
       display: flex;
       align-items: center;
@@ -522,8 +543,8 @@
     .spinner {
       width: 40px;
       height: 40px;
-      border: 3px solid var(--border-glass);
-      border-top-color: var(--accent-blue);
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: rgba(79, 140, 255, 0.8);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -532,7 +553,7 @@
       to { transform: rotate(360deg); }
     }
 
-    /* Toast Notifications */
+    /* Toast */
     .toast-container {
       position: fixed;
       bottom: 24px;
@@ -544,11 +565,8 @@
     }
 
     .toast {
-      background: var(--bg-card);
-      border: 1px solid var(--border-glass);
-      border-radius: 12px;
       padding: 16px 20px;
-      backdrop-filter: blur(20px);
+      border-radius: 1rem;
       animation: slideIn 0.3s ease;
       display: flex;
       align-items: center;
@@ -566,9 +584,9 @@
       }
     }
 
-    .toast.success { border-left: 3px solid var(--accent-green); }
-    .toast.error { border-left: 3px solid var(--accent-red); }
-    .toast.warning { border-left: 3px solid var(--accent-orange); }
+    .toast.success { background: rgba(34, 197, 94, 0.2); }
+    .toast.error { background: rgba(239, 68, 68, 0.2); }
+    .toast.warning { background: rgba(245, 158, 11, 0.2); }
 
     /* Scrollbar */
     ::-webkit-scrollbar {
@@ -589,36 +607,15 @@
       background: rgba(255, 255, 255, 0.2);
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      .container {
-        padding: 16px;
-      }
-
-      .header {
-        flex-direction: column;
-        gap: 16px;
-        text-align: center;
-      }
-
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .source-stats {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    /* Modal Styles */
+    /* Modal */
     .modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
       z-index: 1000;
       display: flex;
       align-items: center;
@@ -634,13 +631,11 @@
     }
 
     .modal {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-glass);
-      border-radius: 20px;
       width: 90%;
       max-width: 500px;
       max-height: 90vh;
       overflow-y: auto;
+      border-radius: 2rem;
       transform: scale(0.9) translateY(20px);
       transition: all 0.3s ease;
     }
@@ -653,34 +648,35 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--border-glass);
+      padding: 24px;
     }
 
     .modal-title {
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 1.25rem;
+      font-weight: 500;
     }
 
     .modal-close {
       width: 36px;
       height: 36px;
-      border: none;
-      background: var(--bg-glass);
-      border-radius: 10px;
-      color: var(--text-secondary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       font-size: 18px;
-      transition: all 0.2s ease;
+      transition: transform 0.2s ease;
+      color: rgba(255, 255, 255, 0.6);
+      font-family: inherit;
     }
 
     .modal-close:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--text-primary);
+      transform: scale(1.1);
+      color: white;
     }
 
     .modal-body {
-      padding: 24px;
+      padding: 0 24px 24px;
     }
 
     .form-group {
@@ -693,33 +689,31 @@
 
     .form-label {
       display: block;
-      font-size: 13px;
+      font-size: 0.8rem;
       font-weight: 500;
-      color: var(--text-secondary);
+      color: rgba(255, 255, 255, 0.6);
       margin-bottom: 8px;
     }
 
     .form-label .required {
-      color: var(--accent-red);
+      color: #ef4444;
     }
 
     .form-input {
       width: 100%;
       padding: 12px 16px;
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 10px;
-      color: var(--text-primary);
-      font-size: 14px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      color: white;
+      font-size: 0.9rem;
       font-family: inherit;
       transition: all 0.2s ease;
       outline: none;
     }
 
     .form-input:focus {
-      border-color: var(--accent-blue);
-      box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.2);
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.4);
+      box-shadow: 0 0 0 2px rgba(79, 140, 255, 0.3);
     }
 
     .form-input::placeholder {
@@ -733,16 +727,15 @@
     }
 
     .form-hint {
-      font-size: 11px;
-      color: var(--text-muted);
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.4);
       margin-top: 6px;
     }
 
     .modal-footer {
       display: flex;
       gap: 12px;
-      padding: 20px 24px;
-      border-top: 1px solid var(--border-glass);
+      padding: 0 24px 24px;
     }
 
     .modal-footer .btn {
@@ -750,97 +743,153 @@
     }
 
     .btn-danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--accent-red);
-      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
     }
 
     .btn-danger:hover {
-      background: rgba(239, 68, 68, 0.25);
+      background: rgba(239, 68, 68, 0.3);
+    }
+
+    /* Chart Container */
+    .chart-container {
+      height: 120px;
+      padding: 0 8px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 16px;
+      }
+
+      .header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+        padding: 16px;
+      }
+
+      .header-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .source-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* SVG Icons */
+    .icon {
+      width: 18px;
+      height: 18px;
+      display: inline-block;
     }
   </style>
 </head>
 <body>
-  <div class="bg-pattern"></div>
+  <div class="gradient-bg"></div>
   
   <div class="container">
     <!-- Header -->
-    <header class="header">
+    <header class="header liquid-glass-strong">
       <div class="logo">
         <div class="logo-icon">⚡</div>
         <div class="logo-text">
-          <h1>APIFriend</h1>
+          <h1>apifriend</h1>
           <p>API 中转路由管理面板</p>
         </div>
       </div>
       <div class="header-actions">
         <button class="btn btn-primary" onclick="openAddModal()">
-          <span>+</span> 添加 API 源
+          <span class="btn-icon">+</span> 添加源
         </button>
-        <button class="btn btn-secondary" onclick="refreshAll()">
-          <span>🔄</span> 刷新
+        <button class="btn liquid-glass" onclick="refreshAll()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 4v6h-6"></path>
+            <path d="M1 20v-6h6"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          刷新
         </button>
-        <button class="btn btn-secondary" onclick="reloadConfig()">
-          <span>⚙</span> 重载配置
+        <button class="btn liquid-glass" onclick="reloadConfig()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          重载
         </button>
-        <button class="btn btn-secondary" onclick="resetAll()">
-          <span>↻</span> 重置统计
+        <button class="btn liquid-glass" onclick="resetAll()">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          重置
         </button>
       </div>
     </header>
 
     <!-- Stats Overview -->
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon blue">📡</div>
-        </div>
+      <div class="stat-card liquid-glass-strong">
+        <div class="stat-icon">📡</div>
         <div class="stat-value" id="total-requests">-</div>
         <div class="stat-label">总请求数</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon green">✓</div>
-        </div>
+      <div class="stat-card liquid-glass-strong">
+        <div class="stat-icon">✓</div>
         <div class="stat-value" id="success-rate">-</div>
         <div class="stat-label">成功率</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon purple">🔌</div>
-        </div>
+      <div class="stat-card liquid-glass-strong">
+        <div class="stat-icon">🔌</div>
         <div class="stat-value" id="active-sources">-</div>
         <div class="stat-label">活跃源</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon orange">⏱</div>
-        </div>
+      <div class="stat-card liquid-glass-strong">
+        <div class="stat-icon">⏱</div>
         <div class="stat-value" id="uptime">-</div>
         <div class="stat-label">运行时间</div>
       </div>
     </div>
 
     <!-- Request Trends Chart -->
-    <div class="panel" style="margin-bottom: 24px;">
+    <div class="panel liquid-glass-strong" style="margin-bottom: 24px;">
       <div class="panel-header">
-        <span class="panel-title">📊 请求趋势（最近24小时）</span>
+        <span class="panel-title">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 20V10"></path>
+            <path d="M12 20V4"></path>
+            <path d="M6 20v-6"></path>
+          </svg>
+          请求趋势（最近24小时）
+        </span>
         <span class="panel-badge" id="chart-requests">0 请求</span>
       </div>
-      <div class="panel-content" style="padding: 20px; height: 140px;">
-        <canvas id="trend-chart" style="width: 100%; height: 100%;"></canvas>
+      <div style="padding: 20px;">
+        <canvas id="trend-chart" style="width: 100%; height: 140px;"></canvas>
       </div>
     </div>
 
     <!-- Main Content -->
     <div class="main-grid">
       <!-- Sources Panel -->
-      <div class="panel">
+      <div class="panel liquid-glass-strong">
         <div class="panel-header">
-          <span class="panel-title">API 源状态</span>
+          <span class="panel-title">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+            API 源状态
+          </span>
           <span class="panel-badge" id="sources-count">0 个源</span>
         </div>
-        <div class="panel-content" id="sources-container">
+        <div id="sources-container">
           <div class="loading">
             <div class="spinner"></div>
           </div>
@@ -850,12 +899,17 @@
       <!-- Right Sidebar -->
       <div style="display: flex; flex-direction: column; gap: 24px;">
         <!-- Health Panel -->
-        <div class="panel">
+        <div class="panel liquid-glass-strong">
           <div class="panel-header">
-            <span class="panel-title">系统健康</span>
-            <span class="panel-badge" id="health-status" style="background: rgba(34, 197, 94, 0.15); color: #22c55e;">健康</span>
+            <span class="panel-title">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+              </svg>
+              系统健康
+            </span>
+            <span class="panel-badge" id="health-status" style="background: rgba(34, 197, 94, 0.2); color: #22c55e;">健康</span>
           </div>
-          <div class="panel-content" id="health-container">
+          <div id="health-container">
             <div class="loading">
               <div class="spinner"></div>
             </div>
@@ -863,17 +917,24 @@
         </div>
 
         <!-- Logs Panel -->
-        <div class="panel">
+        <div class="panel liquid-glass-strong">
           <div class="panel-header">
-            <span class="panel-title">实时日志</span>
-            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="clearLogs()">清除</button>
+            <span class="panel-title">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              实时日志
+            </span>
+            <button class="btn liquid-glass" style="padding: 6px 12px; font-size: 12px;" onclick="clearLogs()">清除</button>
           </div>
-          <div class="panel-content">
-            <div class="logs-container" id="logs-container">
-              <div class="empty-state">
-                <div class="empty-icon">📋</div>
-                <p>暂无日志</p>
-              </div>
+          <div class="logs-container" id="logs-container">
+            <div class="empty-state">
+              <div class="empty-icon">📋</div>
+              <p>暂无日志</p>
             </div>
           </div>
         </div>
@@ -883,10 +944,10 @@
 
   <!-- Modal -->
   <div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
+    <div class="modal liquid-glass-strong">
       <div class="modal-header">
         <span class="modal-title" id="modal-title">添加 API 源</span>
-        <button class="modal-close" onclick="closeModal()">✕</button>
+        <button class="modal-close liquid-glass" onclick="closeModal()">✕</button>
       </div>
       <form id="source-form" onsubmit="event.preventDefault(); saveSource();">
         <div class="modal-body">
@@ -927,10 +988,10 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-danger" id="delete-btn" onclick="deleteSource()" style="display: none;">
+          <button type="button" class="btn btn-danger liquid-glass" id="delete-btn" onclick="deleteSource()" style="display: none;">
             删除源
           </button>
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">取消</button>
+          <button type="button" class="btn liquid-glass" onclick="closeModal()">取消</button>
           <button type="submit" class="btn btn-primary">保存</button>
         </div>
       </form>
@@ -972,7 +1033,6 @@
         if (!res.ok) throw new Error('Server error');
         
         if (!serverConnected) {
-          // 服务器恢复，刷新页面
           serverConnected = true;
           addLog('info', '服务器已恢复，刷新页面...');
           setTimeout(() => location.reload(), 500);
@@ -1017,7 +1077,6 @@
     // Fetch sources
     async function fetchSources() {
       try {
-        // 添加时间戳防止缓存
         const res = await fetch(`${API_BASE}/sources?_t=${Date.now()}`);
         const data = await res.json();
         
@@ -1049,7 +1108,6 @@
         return;
       }
       
-      // 按优先级升序排序（数字越小越靠前）
       sources.sort((a, b) => (a.priority || 999) - (b.priority || 999));
 
       container.innerHTML = sources.map(source => {
@@ -1060,24 +1118,9 @@
           'disabled': '已禁用'
         }[source.status] || source.status;
         
-        // 错误类型显示
-        const lastError = source.stats?.lastError;
-        const errorTypeMap = {
-          'rate_limit': { text: '频率限制', color: 'var(--accent-orange)', icon: '⏱' },
-          'server_error': { text: '服务器错误', color: 'var(--accent-red)', icon: '⚠' },
-          'auth_error': { text: '认证失败', color: 'var(--accent-red)', icon: '🔐' },
-          'timeout': { text: '请求超时', color: 'var(--accent-orange)', icon: '⏳' },
-          'network_error': { text: '网络错误', color: 'var(--accent-red)', icon: '📡' },
-          'client_error': { text: '客户端错误', color: 'var(--accent-orange)', icon: '❌' },
-          'stream_error': { text: '流式错误', color: 'var(--accent-orange)', icon: '📊' }
-        };
-        const errorInfo = lastError?.type ? errorTypeMap[lastError.type] || { text: lastError.type, color: 'var(--text-muted)', icon: '❓' } : null;
-
         const rateLimit = source.rateLimit || {};
         const stats = source.stats || {};
 
-        // Calculate progress percentages
-        // rateLimit 结构: { config: {...}, current: { requests: {...}, tokens: {...} } }
         const rpmCurrent = rateLimit.current?.requests?.minuteCount || rateLimit.current?.minuteCount || 0;
         const tpmCurrent = rateLimit.current?.tokens?.minuteCount || 0;
         const rpmPercent = rateLimit.config?.requestsPerMinute 
@@ -1094,14 +1137,14 @@
         };
 
         return `
-          <div class="source-card">
+          <div class="source-card liquid-glass">
             <div class="source-header">
               <div class="source-info">
                 <div class="source-priority">${source.priority}</div>
                 <div>
                   <div class="source-name">${source.name}</div>
                   <div class="source-url">${source.baseUrl}</div>
-                  ${source.modelMapping?.default ? `<div style="font-size: 11px; color: var(--accent-cyan); margin-top: 2px;">模型: ${source.modelMapping.default}</div>` : ''}
+                  ${source.modelMapping?.default ? `<div style="font-size: 11px; color: rgba(6, 182, 212, 0.8); margin-top: 2px;">模型: ${source.modelMapping.default}</div>` : ''}
                 </div>
               </div>
               <span class="source-status ${statusClass}">${statusText}</span>
@@ -1113,11 +1156,11 @@
                 <div class="source-stat-label">请求数</div>
               </div>
               <div class="source-stat">
-                <div class="source-stat-value" style="color: var(--accent-green);">${stats.successCount || 0}</div>
+                <div class="source-stat-value" style="color: #22c55e;">${stats.successCount || 0}</div>
                 <div class="source-stat-label">成功</div>
               </div>
               <div class="source-stat">
-                <div class="source-stat-value" style="color: var(--accent-red);">${stats.failureCount || 0}</div>
+                <div class="source-stat-value" style="color: #ef4444;">${stats.failureCount || 0}</div>
                 <div class="source-stat-label">失败</div>
               </div>
               <div class="source-stat">
@@ -1126,48 +1169,58 @@
               </div>
             </div>
             
-            ${errorInfo ? `
-            <div style="margin-bottom: 12px; padding: 10px 12px; background: rgba(0,0,0,0.3); border-radius: 8px; border-left: 3px solid ${errorInfo.color};">
-              <div style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
-                <span>${errorInfo.icon}</span>
-                <span style="color: ${errorInfo.color}; font-weight: 500;">${errorInfo.text}</span>
-                ${lastError.statusCode ? `<span style="color: var(--text-muted);">(HTTP ${lastError.statusCode})</span>` : ''}
+            ${stats.avgLatency ? `
+              <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-bottom: 12px;">
+                平均延迟: <span style="color: rgba(255,255,255,0.8);">${Math.round(stats.avgLatency)}ms</span>
+                ${stats.totalTokens ? ` · Token: <span style="color: rgba(255,255,255,0.8);">${stats.totalTokens.toLocaleString()}</span>` : ''}
               </div>
-              ${lastError.message ? `<div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; font-family: 'JetBrains Mono', monospace; word-break: break-all;">${typeof lastError.message === 'string' ? lastError.message.substring(0, 100) : JSON.stringify(lastError.message).substring(0, 100)}</div>` : ''}
-            </div>
             ` : ''}
-
-            <div class="rate-limit-section">
-              <div class="rate-limit-item">
-                <div class="rate-limit-header">
-                  <span class="rate-limit-label">RPM (请求/分钟)</span>
-                  <span class="rate-limit-value">${rpmCurrent} / ${rateLimit.config?.requestsPerMinute || '∞'}</span>
+            
+            ${stats.lastError ? `
+              <div style="font-size: 0.7rem; color: rgba(239, 68, 68, 0.8); margin-bottom: 12px; padding: 8px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 3px solid rgba(239, 68, 68, 0.5);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                  <span style="font-weight: 600;">最后错误</span>
+                  <span style="color: rgba(255,255,255,0.4);">${new Date(stats.lastError.timestamp).toLocaleTimeString('zh-CN')}</span>
                 </div>
-                <div class="progress-bar">
-                  <div class="progress-fill ${getProgressClass(rpmPercent)}" style="width: ${rpmPercent}%"></div>
-                </div>
-              </div>
-              <div class="rate-limit-item">
-                <div class="rate-limit-header">
-                  <span class="rate-limit-label">TPM (Token/分钟)</span>
-                  <span class="rate-limit-value">${tpmCurrent} / ${rateLimit.config?.tokensPerMinute || '∞'}</span>
-                </div>
-                <div class="progress-bar">
-                  <div class="progress-fill ${getProgressClass(tpmPercent)}" style="width: ${tpmPercent}%"></div>
+                <div style="color: rgba(255,255,255,0.6);">
+                  ${stats.lastError.statusCode ? `<span style="color: #f59e0b;">[${stats.lastError.statusCode}]</span> ` : ''}
+                  ${stats.lastError.message || stats.lastError.type || '未知错误'}
                 </div>
               </div>
-            </div>
-
+            ` : ''}
+            
+            ${(rateLimit.config?.requestsPerMinute || rateLimit.config?.tokensPerMinute) ? `
+              <div class="rate-limit-section">
+                ${rateLimit.config.requestsPerMinute ? `
+                  <div class="rate-limit-item">
+                    <div class="rate-limit-header">
+                      <span class="rate-limit-label">RPM</span>
+                      <span class="rate-limit-value">${rpmCurrent} / ${rateLimit.config.requestsPerMinute}</span>
+                    </div>
+                    <div class="progress-bar">
+                      <div class="progress-fill ${getProgressClass(rpmPercent)}" style="width: ${rpmPercent}%"></div>
+                    </div>
+                  </div>
+                ` : ''}
+                ${rateLimit.config.tokensPerMinute ? `
+                  <div class="rate-limit-item">
+                    <div class="rate-limit-header">
+                      <span class="rate-limit-label">TPM</span>
+                      <span class="rate-limit-value">${tpmCurrent.toLocaleString()} / ${rateLimit.config.tokensPerMinute.toLocaleString()}</span>
+                    </div>
+                    <div class="progress-bar">
+                      <div class="progress-fill ${getProgressClass(tpmPercent)}" style="width: ${tpmPercent}%"></div>
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            ` : ''}
+            
             <div class="source-actions">
-              <button class="action-btn" onclick='openEditModal(${JSON.stringify(source)})'>
-                ✏ 编辑
-              </button>
-              <button class="action-btn" onclick="toggleSource('${source.name}', ${source.enabled})">
-                ${source.enabled ? '⏸ 禁用' : '▶ 启用'}
-              </button>
-              <button class="action-btn danger" onclick="resetSource('${source.name}')">
-                ↻ 重置
-              </button>
+              <button class="action-btn liquid-glass" onclick="openEditModal('${source.name}')">编辑</button>
+              <button class="action-btn liquid-glass" onclick="toggleSource('${source.name}')">${source.status === 'enabled' ? '禁用' : '启用'}</button>
+              <button class="action-btn liquid-glass" onclick="resetSource('${source.name}')">重置</button>
+              <button class="action-btn danger liquid-glass" onclick="testSource('${source.name}')">测试</button>
             </div>
           </div>
         `;
@@ -1180,204 +1233,167 @@
         const res = await fetch(`${API_BASE}/health`);
         const data = await res.json();
         
-        const badge = document.getElementById('health-status');
-        const container = document.getElementById('health-container');
-        
-        if (data.success && data.status === 'healthy') {
-          badge.textContent = '健康';
-          badge.style.background = 'rgba(34, 197, 94, 0.15)';
-          badge.style.color = '#22c55e';
-          
-          container.innerHTML = `
-            <div style="padding: 16px; text-align: center;">
-              <div style="font-size: 48px; margin-bottom: 12px;">✅</div>
-              <div style="font-size: 14px; color: var(--text-secondary);">
-                系统运行正常<br>
-                <span style="font-size: 12px; color: var(--text-muted);">${new Date().toLocaleString()}</span>
+        if (data.success) {
+          document.getElementById('health-status').textContent = data.status === 'healthy' ? '健康' : '异常';
+          document.getElementById('health-status').style.background = data.status === 'healthy' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+          document.getElementById('health-status').style.color = data.status === 'healthy' ? '#22c55e' : '#ef4444';
+          document.getElementById('uptime').textContent = formatUptime(data.uptime);
+          document.getElementById('health-container').innerHTML = `
+            <div style="padding: 8px 0;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="color: rgba(255,255,255,0.6);">状态</span>
+                <span style="color: ${data.status === 'healthy' ? '#22c55e' : '#ef4444'};">${data.status === 'healthy' ? '正常运行' : '异常'}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: rgba(255,255,255,0.6);">启动时间</span>
+                <span style="color: rgba(255,255,255,0.8);">${new Date(data.startTime).toLocaleString('zh-CN')}</span>
               </div>
             </div>
           `;
-        } else {
-          badge.textContent = '异常';
-          badge.style.background = 'rgba(239, 68, 68, 0.15)';
-          badge.style.color = '#ef4444';
         }
       } catch (err) {
         console.error('Failed to fetch health:', err);
-        document.getElementById('health-status').textContent = '离线';
-        document.getElementById('health-status').style.background = 'rgba(239, 68, 68, 0.15)';
-        document.getElementById('health-status').style.color = '#ef4444';
+        document.getElementById('health-container').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">❌</div>
+            <p>无法获取健康状态</p>
+          </div>
+        `;
       }
     }
 
-    // Toggle source
-    async function toggleSource(name, enabled) {
+    // Format uptime
+    function formatUptime(seconds) {
+      if (!seconds) return '-';
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      if (hours > 24) {
+        const days = Math.floor(hours / 24);
+        return `${days}天 ${hours % 24}时`;
+      }
+      if (hours > 0) return `${hours}时 ${minutes}分`;
+      return `${minutes}分`;
+    }
+
+    // Fetch stats history for chart
+    async function fetchStatsHistory() {
       try {
-        const endpoint = enabled ? 'disable' : 'enable';
-        const res = await fetch(`${API_BASE}/sources/${name}/${endpoint}`, { method: 'POST' });
+        const res = await fetch(`${API_BASE}/stats/history?hours=24`);
         const data = await res.json();
         
         if (data.success) {
-          showToast(enabled ? 'warning' : 'success', `源 ${name} 已${enabled ? '禁用' : '启用'}`);
-          fetchSources();
-        } else {
-          showToast('error', data.error || '操作失败');
+          drawChart(data.data.hourly);
+          const total = data.data.hourly.reduce((sum, h) => sum + h.totalRequests, 0);
+          document.getElementById('chart-requests').textContent = `${total.toLocaleString()} 请求`;
         }
       } catch (err) {
-        showToast('error', '操作失败: ' + err.message);
+        console.error('Failed to fetch stats history:', err);
       }
     }
 
-    // Reset source
-    async function resetSource(name) {
-      try {
-        const res = await fetch(`${API_BASE}/sources/${name}/reset`, { method: 'POST' });
-        const data = await res.json();
+    // Draw trend chart
+    function drawChart(hourlyData) {
+      const canvas = document.getElementById('trend-chart');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      
+      const width = rect.width;
+      const height = rect.height;
+      const padding = { top: 10, right: 10, bottom: 25, left: 35 };
+      const chartWidth = width - padding.left - padding.right;
+      const chartHeight = height - padding.top - padding.bottom;
+      
+      // Clear
+      ctx.clearRect(0, 0, width, height);
+      
+      if (!hourlyData || hourlyData.length === 0) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.font = '12px Poppins';
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无数据', width / 2, height / 2);
+        return;
+      }
+      
+      const maxRequests = Math.max(...hourlyData.map(h => h.totalRequests || 0), 1);
+      const barWidth = chartWidth / hourlyData.length - 2;
+      
+      // Draw bars
+      hourlyData.forEach((hour, i) => {
+        const x = padding.left + i * (chartWidth / hourlyData.length) + 1;
+        const barHeight = ((hour.totalRequests || 0) / maxRequests) * chartHeight;
+        const y = padding.top + chartHeight - barHeight;
         
-        if (data.success) {
-          showToast('success', `源 ${name} 已重置`);
-          fetchSources();
-        } else {
-          showToast('error', data.error || '重置失败');
-        }
-      } catch (err) {
-        showToast('error', '重置失败: ' + err.message);
-      }
-    }
-
-    // Reset all
-    async function resetAll() {
-      if (!confirm('确定要重置所有源的统计数据吗？')) return;
-      
-      try {
-        const res = await fetch(`${API_BASE}/sources`);
-        const data = await res.json();
+        // Bar gradient
+        const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
+        gradient.addColorStop(0, 'rgba(79, 140, 255, 0.6)');
+        gradient.addColorStop(1, 'rgba(168, 85, 247, 0.3)');
         
-        if (data.success) {
-          for (const source of data.data) {
-            await fetch(`${API_BASE}/sources/${source.name}/reset`, { method: 'POST' });
-          }
-          showToast('success', '所有源已重置');
-          refreshAll();
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(x, y, barWidth, barHeight, 3);
+        ctx.fill();
+      });
+      
+      // Draw axis labels
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = '10px Poppins';
+      
+      // Y axis
+      ctx.textAlign = 'right';
+      for (let i = 0; i <= 3; i++) {
+        const y = padding.top + chartHeight - (i / 3) * chartHeight;
+        ctx.fillText(Math.round(maxRequests * i / 3), padding.left - 5, y + 3);
+      }
+      
+      // X axis (hours)
+      ctx.textAlign = 'center';
+      const labelInterval = Math.ceil(hourlyData.length / 6);
+      hourlyData.forEach((hour, i) => {
+        if (i % labelInterval === 0) {
+          const x = padding.left + i * (chartWidth / hourlyData.length) + barWidth / 2;
+          ctx.fillText(`${hour.hour}:00`, x, height - 5);
         }
-      } catch (err) {
-        showToast('error', '重置失败: ' + err.message);
-      }
+      });
     }
-
-    // Reload config from file
-    async function reloadConfig() {
-      try {
-        const res = await fetch(`${API_BASE}/reload`, { method: 'POST' });
-        const data = await res.json();
-        
-        if (data.success) {
-          showToast('success', `配置已重载，${data.sourcesCount} 个源`);
-          fetchSources();
-          addLog('info', '手动重载配置文件');
-        } else {
-          showToast('error', data.error || '重载失败');
-        }
-      } catch (err) {
-        showToast('error', '重载失败: ' + err.message);
-      }
-    }
-
-    // Add log entry
-    function addLog(level, message) {
-      const container = document.getElementById('logs-container');
-      const time = new Date().toLocaleTimeString();
-      
-      // Remove empty state if exists
-      const emptyState = container.querySelector('.empty-state');
-      if (emptyState) {
-        container.innerHTML = '';
-      }
-      
-      const logEntry = document.createElement('div');
-      logEntry.className = 'log-entry';
-      logEntry.innerHTML = `
-        <span class="log-time">${time}</span>
-        <span class="log-level ${level}">${level.toUpperCase()}</span>
-        <span class="log-message">${message}</span>
-      `;
-      
-      container.insertBefore(logEntry, container.firstChild);
-      
-      // Keep only last 100 logs
-      while (container.children.length > 100) {
-        container.removeChild(container.lastChild);
-      }
-    }
-
-    // Clear logs
-    function clearLogs() {
-      document.getElementById('logs-container').innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">📋</div>
-          <p>暂无日志</p>
-        </div>
-      `;
-    }
-
-    // Show toast
-    function showToast(type, message) {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = `toast ${type}`;
-      
-      // 确保消息是字符串
-      const displayMessage = typeof message === 'object' 
-        ? (message.message || message.error || JSON.stringify(message))
-        : String(message);
-      
-      toast.innerHTML = `
-        <span>${type === 'success' ? '✓' : type === 'error' ? '✗' : '⚠'}</span>
-        <span>${displayMessage}</span>
-      `;
-      
-      container.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.style.animation = 'slideIn 0.3s ease reverse';
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-
-    // Update uptime
-    let startTime = Date.now();
-    setInterval(() => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      const hours = Math.floor(elapsed / 3600);
-      const minutes = Math.floor((elapsed % 3600) / 60);
-      const seconds = elapsed % 60;
-      document.getElementById('uptime').textContent = 
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }, 1000);
 
     // Modal functions
     function openAddModal() {
       document.getElementById('modal-title').textContent = '添加 API 源';
       document.getElementById('source-form').reset();
-      document.getElementById('source-name').removeAttribute('readonly');
+      document.getElementById('source-name').disabled = false;
       document.getElementById('delete-btn').style.display = 'none';
       document.getElementById('modal-overlay').classList.add('active');
     }
 
-    function openEditModal(source) {
-      document.getElementById('modal-title').textContent = '编辑 API 源';
-      document.getElementById('source-name').value = source.name;
-      document.getElementById('source-name').setAttribute('readonly', 'readonly');
-      document.getElementById('source-baseurl').value = source.baseUrl;
-      document.getElementById('source-apikey').value = '';
-      document.getElementById('source-priority').value = source.priority || 100;
-      // rateLimit 可能是 { config: {...}, current: {...} } 或直接 { requestsPerMinute: ... }
-      const rateLimitConfig = source.rateLimit?.config || source.rateLimit || {};
-      document.getElementById('source-rpm').value = rateLimitConfig.requestsPerMinute || '';
-      document.getElementById('source-tpm').value = rateLimitConfig.tokensPerMinute || '';
-      document.getElementById('source-model').value = source.modelMapping?.default || '';
-      document.getElementById('delete-btn').style.display = 'block';
-      document.getElementById('modal-overlay').classList.add('active');
+    async function openEditModal(name) {
+      try {
+        const res = await fetch(`${API_BASE}/sources/${name}`);
+        const data = await res.json();
+        
+        if (data.success) {
+          const source = data.data;
+          document.getElementById('modal-title').textContent = '编辑 API 源';
+          document.getElementById('source-name').value = source.name;
+          document.getElementById('source-name').disabled = true;
+          document.getElementById('source-baseurl').value = source.baseUrl;
+          document.getElementById('source-apikey').value = '';
+          document.getElementById('source-priority').value = source.priority || 100;
+          document.getElementById('source-model').value = source.modelMapping?.default || '';
+          document.getElementById('source-rpm').value = source.rateLimit?.config?.requestsPerMinute || '';
+          document.getElementById('source-tpm').value = source.rateLimit?.config?.tokensPerMinute || '';
+          document.getElementById('delete-btn').style.display = 'block';
+          document.getElementById('modal-overlay').classList.add('active');
+        }
+      } catch (err) {
+        showToast('加载源数据失败', 'error');
+      }
     }
 
     function closeModal() {
@@ -1390,48 +1406,28 @@
       const baseUrl = document.getElementById('source-baseurl').value.trim();
       const apiKey = document.getElementById('source-apikey').value.trim();
       const priority = parseInt(document.getElementById('source-priority').value) || 100;
+      const model = document.getElementById('source-model').value.trim();
       const rpm = parseInt(document.getElementById('source-rpm').value) || null;
       const tpm = parseInt(document.getElementById('source-tpm').value) || null;
-      const model = document.getElementById('source-model').value.trim();
 
-      if (!name || !baseUrl) {
-        showToast('error', '请填写源名称和 Base URL');
-        return;
-      }
+      const isEdit = document.getElementById('source-name').disabled;
+      const url = isEdit ? `${API_BASE}/sources/${name}` : `${API_BASE}/sources`;
+      const method = isEdit ? 'PUT' : 'POST';
 
-      const isNew = !document.getElementById('source-name').hasAttribute('readonly');
-      
-      // 创建新源时需要 API Key
-      if (isNew && !apiKey) {
-        showToast('error', '请填写 API Key');
-        return;
-      }
-      const url = isNew ? `${API_BASE}/sources` : `${API_BASE}/sources/${name}`;
-      const method = isNew ? 'POST' : 'PATCH';
-
-      const body = isNew ? {
+      const body = {
         name,
         baseUrl,
-        apiKey: apiKey || undefined,
         priority,
-        rateLimit: {
-          requestsPerMinute: rpm,
-          tokensPerMinute: tpm
-        },
-        modelMapping: model ? { default: model } : {}
-      } : {
-        priority,
-        rateLimit: {
-          requestsPerMinute: rpm,
-          tokensPerMinute: tpm
-        },
-        modelMapping: model ? { default: model } : {}
+        modelMapping: model ? { default: model } : undefined,
+        rateLimit: (rpm || tpm) ? {
+          config: {
+            requestsPerMinute: rpm,
+            tokensPerMinute: tpm
+          }
+        } : undefined
       };
 
-      // If apiKey provided for existing source, need to update config
-      if (!isNew && apiKey) {
-        body.apiKey = apiKey;
-      }
+      if (apiKey) body.apiKey = apiKey;
 
       try {
         const res = await fetch(url, {
@@ -1439,198 +1435,176 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         });
+        const data = await res.json();
         
-        let data;
-        try {
-          data = await res.json();
-        } catch (parseErr) {
-          console.error('Failed to parse response:', parseErr);
-          showToast('error', '服务器响应格式错误');
-          return;
-        }
-
         if (data.success) {
-          showToast('success', isNew ? '源已创建' : '源已更新');
+          showToast(isEdit ? '源已更新' : '源已添加', 'success');
           closeModal();
           fetchSources();
-          addLog('info', `${isNew ? '创建' : '更新'}源: ${name}`);
         } else {
-          // 处理各种格式的错误信息
-          let errMsg = '操作失败';
-          if (typeof data.error === 'string') {
-            errMsg = data.error;
-          } else if (data.error && typeof data.error === 'object') {
-            errMsg = data.error.message || data.error.type || JSON.stringify(data.error);
-          } else if (data.message) {
-            errMsg = data.message;
-          }
-          console.error('API Error:', data);
-          showToast('error', errMsg);
+          showToast(data.error?.message || '操作失败', 'error');
         }
       } catch (err) {
-        console.error('Request Error:', err);
-        showToast('error', '操作失败: ' + (err.message || '网络错误'));
+        showToast('请求失败', 'error');
       }
     }
 
     // Delete source
     async function deleteSource() {
       const name = document.getElementById('source-name').value;
-      if (!confirm(`确定要删除源 "${name}" 吗？此操作不可恢复。`)) return;
+      if (!confirm(`确定要删除源 "${name}" 吗？`)) return;
 
       try {
         const res = await fetch(`${API_BASE}/sources/${name}`, { method: 'DELETE' });
         const data = await res.json();
-
+        
         if (data.success) {
-          showToast('success', '源已删除');
+          showToast('源已删除', 'success');
           closeModal();
-          // 强制刷新源列表
-          await fetchSources();
-          addLog('info', `删除源: ${name}`);
+          fetchSources();
         } else {
-          showToast('error', data.error || '删除失败');
+          showToast(data.error?.message || '删除失败', 'error');
         }
       } catch (err) {
-        showToast('error', '删除失败: ' + err.message);
+        showToast('请求失败', 'error');
       }
     }
 
-    // ====== 趋势图表 ======
-    let chartData = null;
-    
-    // 获取历史统计
-    async function fetchStatsHistory() {
+    // Toggle source
+    async function toggleSource(name) {
       try {
-        const res = await fetch(`${API_BASE}/stats/history?hours=24`);
+        const res = await fetch(`${API_BASE}/sources/${name}/toggle`, { method: 'POST' });
         const data = await res.json();
         
         if (data.success) {
-          chartData = data.data;
-          renderTrendChart(data.data.hourly);
-          updateChartSummary(data.data.summary);
+          showToast('状态已切换', 'success');
+          fetchSources();
+        } else {
+          showToast(data.error?.message || '操作失败', 'error');
         }
       } catch (err) {
-        console.error('Failed to fetch stats history:', err);
+        showToast('请求失败', 'error');
       }
     }
-    
-    // 更新图表摘要
-    function updateChartSummary(summary) {
-      if (summary && summary.today) {
-        document.getElementById('chart-requests').textContent = `${summary.today.requests} 今日请求`;
-      }
-    }
-    
-    // 渲染趋势图表
-    function renderTrendChart(hourlyData) {
-      const canvas = document.getElementById('trend-chart');
-      const ctx = canvas.getContext('2d');
-      
-      // 固定高度
-      const width = canvas.parentElement.clientWidth;
-      const height = 100;  // 固定高度
-      
-      // 高清屏适配
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      canvas.style.width = width + 'px';
-      canvas.style.height = height + 'px';
-      ctx.scale(dpr, dpr);
-      const padding = { top: 20, right: 20, bottom: 30, left: 50 };
-      const chartWidth = width - padding.left - padding.right;
-      const chartHeight = height - padding.top - padding.bottom;
-      
-      // 清空画布
-      ctx.clearRect(0, 0, width, height);
-      
-      if (!hourlyData || hourlyData.length === 0) {
-        ctx.fillStyle = '#555';
-        ctx.font = '14px Inter';
-        ctx.textAlign = 'center';
-        ctx.fillText('暂无数据', width / 2, height / 2);
-        return;
-      }
-      
-      // 计算最大值
-      const maxRequests = Math.max(...hourlyData.map(d => d.totalRequests || 0), 1);
-      
-      // 绘制网格线
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i <= 4; i++) {
-        const y = padding.top + (chartHeight / 4) * i;
-        ctx.beginPath();
-        ctx.moveTo(padding.left, y);
-        ctx.lineTo(width - padding.right, y);
-        ctx.stroke();
+
+    // Reset source
+    async function resetSource(name) {
+      try {
+        const res = await fetch(`${API_BASE}/sources/${name}/reset`, { method: 'POST' });
+        const data = await res.json();
         
-        // Y轴标签
-        const value = Math.round(maxRequests * (1 - i / 4));
-        ctx.fillStyle = '#555';
-        ctx.font = '10px JetBrains Mono';
-        ctx.textAlign = 'right';
-        ctx.fillText(value.toString(), padding.left - 8, y + 3);
-      }
-      
-      // 绘制面积图
-      const barWidth = chartWidth / hourlyData.length;
-      
-      // 渐变填充
-      const gradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
-      gradient.addColorStop(0, 'rgba(79, 140, 255, 0.3)');
-      gradient.addColorStop(1, 'rgba(79, 140, 255, 0.02)');
-      
-      ctx.beginPath();
-      ctx.moveTo(padding.left, height - padding.bottom);
-      
-      hourlyData.forEach((d, i) => {
-        const x = padding.left + i * barWidth + barWidth / 2;
-        const y = height - padding.bottom - ((d.totalRequests || 0) / maxRequests) * chartHeight;
-        
-        if (i === 0) {
-          ctx.lineTo(x, y);
+        if (data.success) {
+          showToast('统计已重置', 'success');
+          fetchSources();
         } else {
-          ctx.lineTo(x, y);
+          showToast(data.error?.message || '操作失败', 'error');
         }
-      });
-      
-      ctx.lineTo(padding.left + chartWidth, height - padding.bottom);
-      ctx.closePath();
-      ctx.fillStyle = gradient;
-      ctx.fill();
-      
-      // 绘制线条
-      ctx.beginPath();
-      hourlyData.forEach((d, i) => {
-        const x = padding.left + i * barWidth + barWidth / 2;
-        const y = height - padding.bottom - ((d.totalRequests || 0) / maxRequests) * chartHeight;
-        
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      });
-      ctx.strokeStyle = '#4f8cff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // X轴标签（每4小时显示一个）
-      ctx.fillStyle = '#555';
-      ctx.font = '10px JetBrains Mono';
-      ctx.textAlign = 'center';
-      hourlyData.forEach((d, i) => {
-        if (i % 4 === 0 || i === hourlyData.length - 1) {
-          const x = padding.left + i * barWidth + barWidth / 2;
-          ctx.fillText(`${d.hour}:00`, x, height - 8);
-        }
-      });
+      } catch (err) {
+        showToast('请求失败', 'error');
+      }
     }
-    
-    // 定期刷新图表
-    setInterval(fetchStatsHistory, 30000);  // 每30秒刷新
+
+    // Test source
+    async function testSource(name) {
+      showToast('正在测试...', 'warning');
+      try {
+        const res = await fetch(`${API_BASE}/sources/${name}/test`, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('测试成功', 'success');
+        } else {
+          showToast(data.error?.message || '测试失败', 'error');
+        }
+      } catch (err) {
+        showToast('请求失败', 'error');
+      }
+    }
+
+    // Reload config
+    async function reloadConfig() {
+      try {
+        const res = await fetch(`${API_BASE}/config/reload`, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('配置已重载', 'success');
+          fetchSources();
+        } else {
+          showToast(data.error?.message || '重载失败', 'error');
+        }
+      } catch (err) {
+        showToast('请求失败', 'error');
+      }
+    }
+
+    // Reset all stats
+    async function resetAll() {
+      if (!confirm('确定要重置所有统计数据吗？')) return;
+      
+      try {
+        const res = await fetch(`${API_BASE}/stats/reset`, { method: 'POST' });
+        const data = await res.json();
+        
+        if (data.success) {
+          showToast('统计已重置', 'success');
+          refreshAll();
+        } else {
+          showToast(data.error?.message || '重置失败', 'error');
+        }
+      } catch (err) {
+        showToast('请求失败', 'error');
+      }
+    }
+
+    // Add log
+    function addLog(level, message) {
+      const container = document.getElementById('logs-container');
+      const empty = container.querySelector('.empty-state');
+      if (empty) empty.remove();
+      
+      const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+      const entry = document.createElement('div');
+      entry.className = 'log-entry liquid-glass';
+      entry.innerHTML = `
+        <span class="log-time">${time}</span>
+        <span class="log-level ${level}">${level.toUpperCase()}</span>
+        <span class="log-message">${message}</span>
+      `;
+      container.appendChild(entry);
+      container.scrollTop = container.scrollHeight;
+      
+      // Limit log entries
+      while (container.children.length > 100) {
+        container.removeChild(container.firstChild);
+      }
+    }
+
+    // Clear logs
+    function clearLog() {
+      const container = document.getElementById('logs-container');
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <p>暂无日志</p>
+        </div>
+      `;
+    }
+
+    // Toast notification
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast liquid-glass-strong ${type}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
   </script>
 </body>
 </html>
