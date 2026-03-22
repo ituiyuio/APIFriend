@@ -12,27 +12,58 @@ API proxy service with multi-source management, automatic failover, and rate lim
 - **Admin Dashboard** - Modern Liquid Glass style UI
 - **State Persistence** - Retain stats across restarts
 
-## Quick Start
+## Installation
+
+### Option 1: NPM (Recommended)
 
 ```bash
-# Clone the repository
+npm install -g apifriend
+
+# Create config file
+mkdir -p ~/.apifriend && cd ~/.apifriend
+curl -O https://raw.githubusercontent.com/ituiyuio/APIFriend/main/config.example.json
+mv config.example.json config.json
+# Edit config.json and add your API keys
+
+# Start
+apifriend
+```
+
+### Option 2: Windows EXE
+
+Download `apifriend.exe` from [Releases](https://github.com/ituiyuio/APIFriend/releases).
+
+```bash
+# Place apifriend.exe and config.json in the same directory
+# Edit config.json and add your API keys
+apifriend.exe
+```
+
+### Option 3: From Source
+
+```bash
 git clone https://github.com/ituiyuio/APIFriend.git
 cd APIFriend
-
-# Install dependencies
 npm install
-
-# Copy example config
 cp config.example.json config.json
-
-# Edit config and add your API keys
-# Then start
+# Edit config.json and add your API keys
 npm start
 ```
 
 After starting:
 - Proxy URL: `http://127.0.0.1:3000/v1/chat/completions`
 - Admin Dashboard: `http://127.0.0.1:3000/admin/sources`
+
+## Run in Background (Windows)
+
+```bash
+# Option 1: Start minimized
+start /B apifriend.exe
+
+# Option 2: Register as Windows Service (recommended for production)
+nssm install APIFriend "C:\path\to\apifriend.exe"
+nssm start APIFriend
+```
 
 ## Configuration
 
