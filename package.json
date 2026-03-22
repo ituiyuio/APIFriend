@@ -1,6 +1,6 @@
 {
   "name": "apifriend",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "API 中转路由服务，支持多源管理、自动故障切换",
   "main": "index.js",
   "scripts": {
