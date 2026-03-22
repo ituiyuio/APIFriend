@@ -58,8 +58,8 @@ After starting:
         "tokensPerMinute": 6000
       },
       "modelMapping": {
-        "gpt-4": "anthropic/claude-3-opus",
-        "default": "meta-llama/llama-3-8b-instruct"
+        "friend": "anthropic/claude-3.5-sonnet",
+        "default": "anthropic/claude-3.5-sonnet"
       }
     }
   ],
@@ -121,10 +121,18 @@ client = openai.OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gpt-4",
+    model="friend",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)
+```
+
+### Claude Code
+
+For Claude Code, use:
+
+```bash
+claude --model friend
 ```
 
 ## Admin Dashboard
