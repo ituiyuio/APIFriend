@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * APIFriend - API 中转路由服务入口文件
  * 整合所有模块，启动 Express 服务

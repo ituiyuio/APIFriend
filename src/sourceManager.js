@@ -355,9 +355,15 @@ class SourceManager extends EventEmitter {
     state.stats.consecutiveFailures++;
     
     // 记录错误详情
+    // 将 message 转换为字符串，避免前端显示 [object Object]
+    let errorMessage = errorInfo?.message || null;
+    if (errorMessage && typeof errorMessage === 'object') {
+      errorMessage = errorMessage.error?.message || errorMessage.message || errorMessage.error || JSON.stringify(errorMessage);
+    }
+    
     state.stats.lastError = {
       type: errorInfo?.type || reason,
-      message: errorInfo?.message || null,
+      message: errorMessage,
       statusCode: errorInfo?.statusCode || null,
       timestamp: new Date().toISOString()
     };

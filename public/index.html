@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -802,12 +802,12 @@
         <div class="logo-icon">⚡</div>
         <div class="logo-text">
           <h1>apifriend</h1>
-          <p>API 中转路由管理面板</p>
+          <p>API Proxy Management Dashboard</p>
         </div>
       </div>
       <div class="header-actions">
         <button class="btn btn-primary" onclick="openAddModal()">
-          <span class="btn-icon">+</span> 添加源
+          <span class="btn-icon">+</span> Add Source
         </button>
         <button class="btn liquid-glass" onclick="refreshAll()">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -815,21 +815,21 @@
             <path d="M1 20v-6h6"></path>
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
           </svg>
-          刷新
+          Refresh
         </button>
         <button class="btn liquid-glass" onclick="reloadConfig()">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
           </svg>
-          重载
+          Reload
         </button>
         <button class="btn liquid-glass" onclick="resetAll()">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="1 4 1 10 7 10"></polyline>
             <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
           </svg>
-          重置
+          Reset
         </button>
       </div>
     </header>
@@ -839,22 +839,22 @@
       <div class="stat-card liquid-glass-strong">
         <div class="stat-icon">📡</div>
         <div class="stat-value" id="total-requests">-</div>
-        <div class="stat-label">总请求数</div>
+        <div class="stat-label">Total Requests</div>
       </div>
       <div class="stat-card liquid-glass-strong">
         <div class="stat-icon">✓</div>
         <div class="stat-value" id="success-rate">-</div>
-        <div class="stat-label">成功率</div>
+        <div class="stat-label">Success Rate</div>
       </div>
       <div class="stat-card liquid-glass-strong">
         <div class="stat-icon">🔌</div>
         <div class="stat-value" id="active-sources">-</div>
-        <div class="stat-label">活跃源</div>
+        <div class="stat-label">Active Sources</div>
       </div>
       <div class="stat-card liquid-glass-strong">
         <div class="stat-icon">⏱</div>
         <div class="stat-value" id="uptime">-</div>
-        <div class="stat-label">运行时间</div>
+        <div class="stat-label">Uptime</div>
       </div>
     </div>
 
@@ -867,9 +867,9 @@
             <path d="M12 20V4"></path>
             <path d="M6 20v-6"></path>
           </svg>
-          请求趋势（最近24小时）
+          Request Trends (Last 24 Hours)
         </span>
-        <span class="panel-badge" id="chart-requests">0 请求</span>
+        <span class="panel-badge" id="chart-requests">0 requests</span>
       </div>
       <div style="padding: 20px;">
         <canvas id="trend-chart" style="width: 100%; height: 140px;"></canvas>
@@ -885,9 +885,9 @@
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
             </svg>
-            API 源状态
+            API Sources
           </span>
-          <span class="panel-badge" id="sources-count">0 个源</span>
+          <span class="panel-badge" id="sources-count">0 sources</span>
         </div>
         <div id="sources-container">
           <div class="loading">
@@ -905,9 +905,9 @@
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
               </svg>
-              系统健康
+              System Health
             </span>
-            <span class="panel-badge" id="health-status" style="background: rgba(34, 197, 94, 0.2); color: #22c55e;">健康</span>
+            <span class="panel-badge" id="health-status" style="background: rgba(34, 197, 94, 0.2); color: #22c55e;">Healthy</span>
           </div>
           <div id="health-container">
             <div class="loading">
@@ -927,14 +927,14 @@
                 <line x1="16" y1="17" x2="8" y2="17"></line>
                 <polyline points="10 9 9 9 8 9"></polyline>
               </svg>
-              实时日志
+              Live Logs
             </span>
-            <button class="btn liquid-glass" style="padding: 6px 12px; font-size: 12px;" onclick="clearLogs()">清除</button>
+            <button class="btn liquid-glass" style="padding: 6px 12px; font-size: 12px;" onclick="clearLogs()">Clear</button>
           </div>
           <div class="logs-container" id="logs-container">
             <div class="empty-state">
               <div class="empty-icon">📋</div>
-              <p>暂无日志</p>
+              <p>No logs yet</p>
             </div>
           </div>
         </div>
@@ -946,53 +946,53 @@
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal liquid-glass-strong">
       <div class="modal-header">
-        <span class="modal-title" id="modal-title">添加 API 源</span>
+        <span class="modal-title" id="modal-title">Add API Source</span>
         <button class="modal-close liquid-glass" onclick="closeModal()">✕</button>
       </div>
       <form id="source-form" onsubmit="event.preventDefault(); saveSource();">
         <div class="modal-body">
           <div class="form-group">
-            <label class="form-label">源名称 <span class="required">*</span></label>
-            <input type="text" class="form-input" id="source-name" placeholder="例如: openrouter-free" required>
-            <div class="form-hint">唯一标识符，创建后不可修改</div>
+            <label class="form-label">Source Name <span class="required">*</span></label>
+            <input type="text" class="form-input" id="source-name" placeholder="e.g. openrouter-free" required>
+            <div class="form-hint">Unique identifier, cannot be changed after creation</div>
           </div>
           <div class="form-group">
             <label class="form-label">Base URL <span class="required">*</span></label>
-            <input type="text" class="form-input" id="source-baseurl" placeholder="例如: https://api.openai.com/v1" required>
+            <input type="text" class="form-input" id="source-baseurl" placeholder="e.g. https://api.openai.com/v1" required>
           </div>
           <div class="form-group">
             <label class="form-label">API Key</label>
             <input type="password" class="form-input" id="source-apikey" placeholder="sk-xxxxx">
-            <div class="form-hint">编辑时留空表示保持不变</div>
+            <div class="form-hint">Leave empty when editing to keep unchanged</div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">优先级</label>
+              <label class="form-label">Priority</label>
               <input type="number" class="form-input" id="source-priority" value="100" min="1" max="999">
-              <div class="form-hint">数字越小优先级越高</div>
+              <div class="form-hint">Lower number = higher priority</div>
             </div>
             <div class="form-group">
-              <label class="form-label">默认模型</label>
-              <input type="text" class="form-input" id="source-model" placeholder="例如: gpt-4">
+              <label class="form-label">Default Model</label>
+              <input type="text" class="form-input" id="source-model" placeholder="e.g. gpt-4">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">RPM (请求/分钟)</label>
-              <input type="number" class="form-input" id="source-rpm" placeholder="例如: 60" min="1">
+              <label class="form-label">RPM (requests/min)</label>
+              <input type="number" class="form-input" id="source-rpm" placeholder="e.g. 60" min="1">
             </div>
             <div class="form-group">
-              <label class="form-label">TPM (Token/分钟)</label>
-              <input type="number" class="form-input" id="source-tpm" placeholder="例如: 10000" min="1">
+              <label class="form-label">TPM (tokens/min)</label>
+              <input type="number" class="form-input" id="source-tpm" placeholder="e.g. 10000" min="1">
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-danger liquid-glass" id="delete-btn" onclick="deleteSource()" style="display: none;">
-            删除源
+            Delete Source
           </button>
-          <button type="button" class="btn liquid-glass" onclick="closeModal()">取消</button>
-          <button type="submit" class="btn btn-primary">保存</button>
+          <button type="button" class="btn liquid-glass" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
         </div>
       </form>
     </div>
@@ -1034,13 +1034,13 @@
         
         if (!serverConnected) {
           serverConnected = true;
-          addLog('info', '服务器已恢复，刷新页面...');
+          addLog('info', 'Server recovered, refreshing...');
           setTimeout(() => location.reload(), 500);
         }
       } catch (err) {
         if (serverConnected) {
           serverConnected = false;
-          addLog('error', '服务器连接断开，等待重连...');
+          addLog('error', 'Server connection lost, waiting to reconnect...');
         }
       }
     }
@@ -1053,7 +1053,7 @@
         fetchHealth(),
         fetchStatsHistory()
       ]);
-      addLog('info', '数据已刷新');
+      addLog('info', 'Data refreshed');
     }
 
     // Fetch statistics
@@ -1067,7 +1067,7 @@
           document.getElementById('total-requests').textContent = stats.requests.total.toLocaleString();
           document.getElementById('success-rate').textContent = stats.requests.successRate;
           document.getElementById('active-sources').textContent = stats.sources.enabled;
-          document.getElementById('sources-count').textContent = `${stats.sources.total} 个源`;
+          document.getElementById('sources-count').textContent = `${stats.sources.total} sources`;
         }
       } catch (err) {
         console.error('Failed to fetch stats:', err);
@@ -1088,7 +1088,7 @@
         document.getElementById('sources-container').innerHTML = `
           <div class="empty-state">
             <div class="empty-icon">❌</div>
-            <p>无法加载源数据</p>
+            <p>Failed to load sources</p>
           </div>
         `;
       }
@@ -1102,7 +1102,7 @@
         container.innerHTML = `
           <div class="empty-state">
             <div class="empty-icon">📡</div>
-            <p>暂无配置的 API 源</p>
+            <p>No API sources configured</p>
           </div>
         `;
         return;
@@ -1113,9 +1113,9 @@
       container.innerHTML = sources.map(source => {
         const statusClass = `status-${source.status}`;
         const statusText = {
-          'enabled': '正常',
-          'cooling': '冷却中',
-          'disabled': '已禁用'
+          'enabled': 'Active',
+          'cooling': 'Cooling',
+          'disabled': 'Disabled'
         }[source.status] || source.status;
         
         const rateLimit = source.rateLimit || {};
@@ -1144,7 +1144,7 @@
                 <div>
                   <div class="source-name">${source.name}</div>
                   <div class="source-url">${source.baseUrl}</div>
-                  ${source.modelMapping?.default ? `<div style="font-size: 11px; color: rgba(6, 182, 212, 0.8); margin-top: 2px;">模型: ${source.modelMapping.default}</div>` : ''}
+                  ${source.modelMapping?.default ? `<div style="font-size: 11px; color: rgba(6, 182, 212, 0.8); margin-top: 2px;">Model: ${source.modelMapping.default}</div>` : ''}
                 </div>
               </div>
               <span class="source-status ${statusClass}">${statusText}</span>
@@ -1153,38 +1153,38 @@
             <div class="source-stats">
               <div class="source-stat">
                 <div class="source-stat-value">${stats.totalRequests || 0}</div>
-                <div class="source-stat-label">请求数</div>
+                <div class="source-stat-label">Requests</div>
               </div>
               <div class="source-stat">
                 <div class="source-stat-value" style="color: #22c55e;">${stats.successCount || 0}</div>
-                <div class="source-stat-label">成功</div>
+                <div class="source-stat-label">Success</div>
               </div>
               <div class="source-stat">
                 <div class="source-stat-value" style="color: #ef4444;">${stats.failureCount || 0}</div>
-                <div class="source-stat-label">失败</div>
+                <div class="source-stat-label">Failed</div>
               </div>
               <div class="source-stat">
                 <div class="source-stat-value">${stats.consecutiveFailures || 0}</div>
-                <div class="source-stat-label">连续失败</div>
+                <div class="source-stat-label">Consecutive</div>
               </div>
             </div>
             
             ${stats.avgLatency ? `
               <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-bottom: 12px;">
-                平均延迟: <span style="color: rgba(255,255,255,0.8);">${Math.round(stats.avgLatency)}ms</span>
-                ${stats.totalTokens ? ` · Token: <span style="color: rgba(255,255,255,0.8);">${stats.totalTokens.toLocaleString()}</span>` : ''}
+                Avg Latency: <span style="color: rgba(255,255,255,0.8);">${Math.round(stats.avgLatency)}ms</span>
+                ${stats.totalTokens ? ` · Tokens: <span style="color: rgba(255,255,255,0.8);">${stats.totalTokens.toLocaleString()}</span>` : ''}
               </div>
             ` : ''}
             
             ${stats.lastError ? `
               <div style="font-size: 0.7rem; color: rgba(239, 68, 68, 0.8); margin-bottom: 12px; padding: 8px 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border-left: 3px solid rgba(239, 68, 68, 0.5);">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                  <span style="font-weight: 600;">最后错误</span>
-                  <span style="color: rgba(255,255,255,0.4);">${new Date(stats.lastError.timestamp).toLocaleTimeString('zh-CN')}</span>
+                  <span style="font-weight: 600;">Last Error</span>
+                  <span style="color: rgba(255,255,255,0.4);">${new Date(stats.lastError.timestamp).toLocaleTimeString()}</span>
                 </div>
                 <div style="color: rgba(255,255,255,0.6);">
                   ${stats.lastError.statusCode ? `<span style="color: #f59e0b;">[${stats.lastError.statusCode}]</span> ` : ''}
-                  ${stats.lastError.message || stats.lastError.type || '未知错误'}
+                  ${stats.lastError.message || stats.lastError.type || 'Unknown error'}
                 </div>
               </div>
             ` : ''}
@@ -1217,10 +1217,10 @@
             ` : ''}
             
             <div class="source-actions">
-              <button class="action-btn liquid-glass" onclick="openEditModal('${source.name}')">编辑</button>
-              <button class="action-btn liquid-glass" onclick="toggleSource('${source.name}')">${source.status === 'enabled' ? '禁用' : '启用'}</button>
-              <button class="action-btn liquid-glass" onclick="resetSource('${source.name}')">重置</button>
-              <button class="action-btn danger liquid-glass" onclick="testSource('${source.name}')">测试</button>
+              <button class="action-btn liquid-glass" onclick="openEditModal('${source.name}')">Edit</button>
+              <button class="action-btn liquid-glass" onclick="toggleSource('${source.name}')">${source.status === 'enabled' ? 'Disable' : 'Enable'}</button>
+              <button class="action-btn liquid-glass" onclick="resetSource('${source.name}')">Reset</button>
+              <button class="action-btn danger liquid-glass" onclick="testSource('${source.name}')">Test</button>
             </div>
           </div>
         `;
@@ -1234,19 +1234,19 @@
         const data = await res.json();
         
         if (data.success) {
-          document.getElementById('health-status').textContent = data.status === 'healthy' ? '健康' : '异常';
+          document.getElementById('health-status').textContent = data.status === 'healthy' ? 'Healthy' : 'Error';
           document.getElementById('health-status').style.background = data.status === 'healthy' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)';
           document.getElementById('health-status').style.color = data.status === 'healthy' ? '#22c55e' : '#ef4444';
           document.getElementById('uptime').textContent = formatUptime(data.uptime);
           document.getElementById('health-container').innerHTML = `
             <div style="padding: 8px 0;">
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span style="color: rgba(255,255,255,0.6);">状态</span>
-                <span style="color: ${data.status === 'healthy' ? '#22c55e' : '#ef4444'};">${data.status === 'healthy' ? '正常运行' : '异常'}</span>
+                <span style="color: rgba(255,255,255,0.6);">Status</span>
+                <span style="color: ${data.status === 'healthy' ? '#22c55e' : '#ef4444'};">${data.status === 'healthy' ? 'Running' : 'Error'}</span>
               </div>
               <div style="display: flex; justify-content: space-between;">
-                <span style="color: rgba(255,255,255,0.6);">启动时间</span>
-                <span style="color: rgba(255,255,255,0.8);">${new Date(data.startTime).toLocaleString('zh-CN')}</span>
+                <span style="color: rgba(255,255,255,0.6);">Started</span>
+                <span style="color: rgba(255,255,255,0.8);">${new Date(data.startTime).toLocaleString()}</span>
               </div>
             </div>
           `;
@@ -1256,7 +1256,7 @@
         document.getElementById('health-container').innerHTML = `
           <div class="empty-state">
             <div class="empty-icon">❌</div>
-            <p>无法获取健康状态</p>
+            <p>Failed to load health status</p>
           </div>
         `;
       }
@@ -1269,10 +1269,10 @@
       const minutes = Math.floor((seconds % 3600) / 60);
       if (hours > 24) {
         const days = Math.floor(hours / 24);
-        return `${days}天 ${hours % 24}时`;
+        return `${days}d ${hours % 24}h`;
       }
-      if (hours > 0) return `${hours}时 ${minutes}分`;
-      return `${minutes}分`;
+      if (hours > 0) return `${hours}h ${minutes}m`;
+      return `${minutes}m`;
     }
 
     // Fetch stats history for chart
@@ -1284,7 +1284,7 @@
         if (data.success) {
           drawChart(data.data.hourly);
           const total = data.data.hourly.reduce((sum, h) => sum + h.totalRequests, 0);
-          document.getElementById('chart-requests').textContent = `${total.toLocaleString()} 请求`;
+          document.getElementById('chart-requests').textContent = `${total.toLocaleString()} requests`;
         }
       } catch (err) {
         console.error('Failed to fetch stats history:', err);
@@ -1317,7 +1317,7 @@
         ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         ctx.font = '12px Poppins';
         ctx.textAlign = 'center';
-        ctx.fillText('暂无数据', width / 2, height / 2);
+        ctx.fillText('No data', width / 2, height / 2);
         return;
       }
       
@@ -1365,7 +1365,7 @@
 
     // Modal functions
     function openAddModal() {
-      document.getElementById('modal-title').textContent = '添加 API 源';
+      document.getElementById('modal-title').textContent = 'Add API Source';
       document.getElementById('source-form').reset();
       document.getElementById('source-name').disabled = false;
       document.getElementById('delete-btn').style.display = 'none';
@@ -1379,7 +1379,7 @@
         
         if (data.success) {
           const source = data.data;
-          document.getElementById('modal-title').textContent = '编辑 API 源';
+          document.getElementById('modal-title').textContent = 'Edit API Source';
           document.getElementById('source-name').value = source.name;
           document.getElementById('source-name').disabled = true;
           document.getElementById('source-baseurl').value = source.baseUrl;
@@ -1392,7 +1392,7 @@
           document.getElementById('modal-overlay').classList.add('active');
         }
       } catch (err) {
-        showToast('加载源数据失败', 'error');
+        showToast('Failed to load source data', 'error');
       }
     }
 
@@ -1438,35 +1438,35 @@
         const data = await res.json();
         
         if (data.success) {
-          showToast(isEdit ? '源已更新' : '源已添加', 'success');
+          showToast(isEdit ? 'Source updated' : 'Source added', 'success');
           closeModal();
           fetchSources();
         } else {
-          showToast(data.error?.message || '操作失败', 'error');
+          showToast(data.error?.message || 'Operation failed', 'error');
         }
       } catch (err) {
-        showToast('请求失败', 'error');
+        showToast('Request failed', 'error');
       }
     }
 
     // Delete source
     async function deleteSource() {
       const name = document.getElementById('source-name').value;
-      if (!confirm(`确定要删除源 "${name}" 吗？`)) return;
+      if (!confirm(`Are you sure you want to delete source "${name}"?`)) return;
 
       try {
         const res = await fetch(`${API_BASE}/sources/${name}`, { method: 'DELETE' });
         const data = await res.json();
         
         if (data.success) {
-          showToast('源已删除', 'success');
+          showToast('Source deleted', 'success');
           closeModal();
           fetchSources();
         } else {
-          showToast(data.error?.message || '删除失败', 'error');
+          showToast(data.error?.message || 'Delete failed', 'error');
         }
       } catch (err) {
-        showToast('请求失败', 'error');
+        showToast('Request failed', 'error');
       }
     }
 
@@ -1477,13 +1477,13 @@
         const data = await res.json();
         
         if (data.success) {
-          showToast('状态已切换', 'success');
+          showToast('Status toggled', 'success');
           fetchSources();
         } else {
-          showToast(data.error?.message || '操作失败', 'error');
+          showToast(data.error?.message || 'Operation failed', 'error');
         }
       } catch (err) {
-        showToast('请求失败', 'error');
+        showToast('Request failed', 'error');
       }
     }
 
@@ -1494,30 +1494,30 @@
         const data = await res.json();
         
         if (data.success) {
-          showToast('统计已重置', 'success');
+          showToast('Stats reset', 'success');
           fetchSources();
         } else {
-          showToast(data.error?.message || '操作失败', 'error');
+          showToast(data.error?.message || 'Operation failed', 'error');
         }
       } catch (err) {
-        showToast('请求失败', 'error');
+        showToast('Request failed', 'error');
       }
     }
 
     // Test source
     async function testSource(name) {
-      showToast('正在测试...', 'warning');
+      showToast('Testing...', 'warning');
       try {
         const res = await fetch(`${API_BASE}/sources/${name}/test`, { method: 'POST' });
         const data = await res.json();
         
         if (data.success) {
-          showToast('测试成功', 'success');
+          showToast('Test passed', 'success');
         } else {
-          showToast(data.error?.message || '测试失败', 'error');
+          showToast(data.error?.message || 'Test failed', 'error');
         }
       } catch (err) {
-        showToast('请求失败', 'error');
+        showToast('Request failed', 'error');
       }
     }
 
@@ -1528,32 +1528,32 @@
         const data = await res.json();
         
         if (data.success) {
-          showToast('配置已重载', 'success');
+          showToast('Config reloaded', 'success');
           fetchSources();
         } else {
-          showToast(data.error?.message || '重载失败', 'error');
+          showToast(data.error?.message || 'Reload failed', 'error');
         }
       } catch (err) {
-        showToast('请求失败', 'error');
+        showToast('Request failed', 'error');
       }
     }
 
     // Reset all stats
     async function resetAll() {
-      if (!confirm('确定要重置所有统计数据吗？')) return;
+      if (!confirm('Are you sure you want to reset all stats?')) return;
       
       try {
         const res = await fetch(`${API_BASE}/stats/reset`, { method: 'POST' });
         const data = await res.json();
         
         if (data.success) {
-          showToast('统计已重置', 'success');
+          showToast('All stats reset', 'success');
           refreshAll();
         } else {
-          showToast(data.error?.message || '重置失败', 'error');
+          showToast(data.error?.message || 'Reset failed', 'error');
         }
       } catch (err) {
-        showToast('请求失败', 'error');
+        showToast('Request failed', 'error');
       }
     }
 
@@ -1563,7 +1563,7 @@
       const empty = container.querySelector('.empty-state');
       if (empty) empty.remove();
       
-      const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+      const time = new Date().toLocaleTimeString(undefined, { hour12: false });
       const entry = document.createElement('div');
       entry.className = 'log-entry liquid-glass';
       entry.innerHTML = `
@@ -1581,12 +1581,12 @@
     }
 
     // Clear logs
-    function clearLog() {
+    function clearLogs() {
       const container = document.getElementById('logs-container');
       container.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">📋</div>
-          <p>暂无日志</p>
+          <p>No logs yet</p>
         </div>
       `;
     }

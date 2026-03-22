@@ -1,0 +1,26 @@
+# Dev files
+.git
+.gitignore
+.github
+.iflow
+
+# Config
+config.json
+.state.json
+
+# Build outputs
+dist/
+*.exe
+
+# Logs
+logs/
+*.log
+
+# Test files
+test-*.json
+*.test.js
+
+# Dev files
+DESIGN.md
+admin-dashboard.jpg
+node_modules/

@@ -1,14 +1,37 @@
 {
   "name": "apifriend",
   "version": "0.1.0",
-  "description": "API 中转路由服务，支持多源管理、自动故障切换",
+  "description": "API proxy with multi-source management, auto failover, and rate limiting",
   "main": "index.js",
+  "bin": {
+    "apifriend": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "src/**/*.js",
+    "public/**/*",
+    "config.example.json"
+  ],
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "build": "pkg . --targets node18-win-x64,node18-linux-x64,node18-macos-x64 --output dist/",
     "test": "node -e \"console.log('Tests passed')\""
   },
-  "keywords": ["api", "proxy", "failover", "openai", "load-balancing"],
+  "pkg": {
+    "assets": [
+      "public/**/*"
+    ],
+    "outputPath": "dist"
+  },
+  "keywords": [
+    "api",
+    "proxy",
+    "failover",
+    "openai",
+    "load-balancing",
+    "anthropic"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -17,6 +40,7 @@
     "http-proxy-middleware": "^3.0.5"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "nodemon": "^3.1.0",
+    "pkg": "^5.8.1"
   }
 }
