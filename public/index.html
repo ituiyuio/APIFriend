@@ -484,6 +484,47 @@
       color: #ef4444;
     }
 
+    /* Drag and Drop */
+    .source-card.dragging {
+      opacity: 0.5;
+      transform: scale(1.02);
+      box-shadow: 0 10px 40px rgba(79, 140, 255, 0.3);
+    }
+
+    .source-card.drag-over {
+      border: 2px dashed rgba(79, 140, 255, 0.6);
+      transform: scale(1.01);
+    }
+
+    .source-card[draggable="true"] {
+      cursor: grab;
+    }
+
+    .source-card[draggable="true"]:active {
+      cursor: grabbing;
+    }
+
+    .drag-handle {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 255, 255, 0.3);
+      cursor: grab;
+      margin-right: 8px;
+      transition: color 0.2s ease;
+    }
+
+    .drag-handle:hover {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .drag-handle svg {
+      width: 16px;
+      height: 16px;
+    }
+
     /* Logs */
     .logs-container {
       height: 350px;
@@ -1137,14 +1178,26 @@
         };
 
         return `
-          <div class="source-card liquid-glass">
+          <div class="source-card liquid-glass" draggable="true" data-name="${source.name}" data-priority="${source.priority}">
             <div class="source-header">
-              <div class="source-info">
-                <div class="source-priority">${source.priority}</div>
-                <div>
-                  <div class="source-name">${source.name}</div>
-                  <div class="source-url">${source.baseUrl}</div>
-                  ${source.modelMapping?.default ? `<div style="font-size: 11px; color: rgba(6, 182, 212, 0.8); margin-top: 2px;">Model: ${source.modelMapping.default}</div>` : ''}
+              <div style="display: flex; align-items: center;">
+                <div class="drag-handle" title="Drag to reorder">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="9" cy="6" r="1.5"/>
+                    <circle cx="15" cy="6" r="1.5"/>
+                    <circle cx="9" cy="12" r="1.5"/>
+                    <circle cx="15" cy="12" r="1.5"/>
+                    <circle cx="9" cy="18" r="1.5"/>
+                    <circle cx="15" cy="18" r="1.5"/>
+                  </svg>
+                </div>
+                <div class="source-info">
+                  <div class="source-priority">${source.priority}</div>
+                  <div>
+                    <div class="source-name">${source.name}</div>
+                    <div class="source-url">${source.baseUrl}</div>
+                    ${source.modelMapping?.default ? `<div style="font-size: 11px; color: rgba(6, 182, 212, 0.8); margin-top: 2px;">Model: ${source.modelMapping.default}</div>` : ''}
+                  </div>
                 </div>
               </div>
               <span class="source-status ${statusClass}">${statusText}</span>
@@ -1225,6 +1278,118 @@
           </div>
         `;
       }).join('');
+
+      // Initialize drag and drop after rendering
+      initDragAndDrop();
+    }
+
+    // Drag and Drop functionality
+    let draggedItem = null;
+
+    function initDragAndDrop() {
+      const cards = document.querySelectorAll('.source-card[draggable="true"]');
+
+      cards.forEach(card => {
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragend', handleDragEnd);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('dragleave', handleDragLeave);
+        card.addEventListener('drop', handleDrop);
+      });
+    }
+
+    function handleDragStart(e) {
+      draggedItem = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', this.dataset.name);
+    }
+
+    function handleDragEnd(e) {
+      this.classList.remove('dragging');
+      document.querySelectorAll('.source-card').forEach(card => {
+        card.classList.remove('drag-over');
+      });
+      draggedItem = null;
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (this !== draggedItem) {
+        this.classList.add('drag-over');
+      }
+    }
+
+    function handleDragLeave(e) {
+      this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      this.classList.remove('drag-over');
+
+      if (this === draggedItem) return;
+
+      const container = document.getElementById('sources-container');
+      const cards = Array.from(container.querySelectorAll('.source-card'));
+
+      // Get new order
+      const draggedIndex = cards.indexOf(draggedItem);
+      const dropIndex = cards.indexOf(this);
+
+      // Reorder in DOM
+      if (draggedIndex < dropIndex) {
+        this.parentNode.insertBefore(draggedItem, this.nextSibling);
+      } else {
+        this.parentNode.insertBefore(draggedItem, this);
+      }
+
+      // Calculate new priorities
+      const reorderedCards = Array.from(container.querySelectorAll('.source-card'));
+      const priorityUpdates = reorderedCards.map((card, index) => ({
+        name: card.dataset.name,
+        priority: (index + 1) * 10 // 10, 20, 30, ...
+      }));
+
+      // Update priority display in UI immediately
+      reorderedCards.forEach((card, index) => {
+        const priorityEl = card.querySelector('.source-priority');
+        if (priorityEl) {
+          priorityEl.textContent = (index + 1) * 10;
+        }
+        card.dataset.priority = (index + 1) * 10;
+      });
+
+      // Save to server
+      updatePriorities(priorityUpdates);
+    }
+
+    async function updatePriorities(updates) {
+      try {
+        // Update each source priority
+        const results = await Promise.all(
+          updates.map(({ name, priority }) =>
+            fetch(`${API_BASE}/sources/${name}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ priority })
+            })
+          )
+        );
+
+        const allSuccess = results.every(r => r.ok);
+        if (allSuccess) {
+          showToast('Priority order saved', 'success');
+          addLog('info', 'Source priorities updated');
+        } else {
+          showToast('Some updates failed', 'warning');
+          fetchSources(); // Reload to reset
+        }
+      } catch (err) {
+        showToast('Failed to save priority order', 'error');
+        fetchSources(); // Reload to reset
+      }
     }
 
     // Fetch health

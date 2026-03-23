@@ -14,8 +14,13 @@ config.json
 # IDE
 .idea/
 .vscode/
+.claude/
 *.swp
 *.swo
+
+# Build output
+dist/
+*.tgz
 
 # OS
 .DS_Store
