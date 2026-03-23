@@ -229,8 +229,7 @@ class StatsRecorder {
       this.cleanupOldData();
     }, 60 * 60 * 1000);  // 每小时检查一次
     
-    // 首次清理
-    this.cleanupOldData();
+    // 注意：不在此处执行首次清理，等待 import 完成后再清理
   }
 
   /**
@@ -242,7 +241,8 @@ class StatsRecorder {
     // 清理小时数据
     const cutoffHour = new Date(now.getTime() - this.maxHours * 60 * 60 * 1000);
     for (const [key] of this.hourlyStats) {
-      const hourDate = new Date(key.replace(' ', 'T') + ':00');
+      // 使用本地时区解析时间字符串
+      const hourDate = this.parseLocalDateTime(key);
       if (hourDate < cutoffHour) {
         this.hourlyStats.delete(key);
       }
@@ -251,11 +251,36 @@ class StatsRecorder {
     // 清理天数据
     const cutoffDay = new Date(now.getTime() - this.maxDays * 24 * 60 * 60 * 1000);
     for (const [key] of this.dailyStats) {
-      const dayDate = new Date(key + 'T00:00:00');
+      // 使用本地时区解析日期字符串
+      const dayDate = this.parseLocalDate(key);
       if (dayDate < cutoffDay) {
         this.dailyStats.delete(key);
       }
     }
+  }
+
+  /**
+   * 解析本地日期时间字符串 (格式: "2026-03-22 05:00")
+   * @param {string} key - 时间键
+   * @returns {Date} 本地时间的 Date 对象
+   */
+  parseLocalDateTime(key) {
+    const match = key.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/);
+    if (!match) return new Date(key);
+    const [, year, month, day, hour, minute] = match.map(Number);
+    return new Date(year, month - 1, day, hour, minute);
+  }
+
+  /**
+   * 解析本地日期字符串 (格式: "2026-03-22")
+   * @param {string} key - 日期键
+   * @returns {Date} 本地时间的 Date 对象
+   */
+  parseLocalDate(key) {
+    const match = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return new Date(key);
+    const [, year, month, day] = match.map(Number);
+    return new Date(year, month - 1, day, 0, 0, 0);
   }
 
   /**
@@ -278,6 +303,9 @@ class StatsRecorder {
     if (data.daily) {
       this.dailyStats = new Map(Object.entries(data.daily));
     }
+    
+    // 导入后执行一次清理，移除过期数据
+    this.cleanupOldData();
   }
 
   /**

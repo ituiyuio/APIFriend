@@ -39,7 +39,7 @@ class StatePersistence {
     this.intervalId = null;
     this.lastSaveTime = null;
     this.lastLoadTime = null;
-    this.pendingImmediateSave = false;
+    this.debounceTimer = null;
     
     // 事件监听器
     this.eventListeners = new Map();
@@ -121,15 +121,29 @@ class StatePersistence {
    * @returns {Promise<boolean>} 是否成功
    */
   async save(immediate = false) {
-    // 防抖：如果已有待处理的立即保存，跳过
-    if (immediate && this.pendingImmediateSave) {
-      return false;
+    // 使用防抖定时器：100ms 内的多次调用会被合并
+    if (!immediate && this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = setTimeout(() => {
+        this._doSave();
+      }, 100);
+      return true;
     }
     
-    if (immediate) {
-      this.pendingImmediateSave = true;
+    // 立即保存：清除防抖定时器，直接保存
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
     }
     
+    return this._doSave();
+  }
+  
+  /**
+   * 执行实际保存操作
+   * @returns {Promise<boolean>} 是否成功
+   */
+  async _doSave() {
     this._emit(PersistenceEvent.SAVE_START);
     
     try {
@@ -155,10 +169,6 @@ class StatePersistence {
       this._emit(PersistenceEvent.SAVE_ERROR, { error: err });
       this.onLog('error', `Failed to save state: ${err.message}`);
       return false;
-    } finally {
-      if (immediate) {
-        this.pendingImmediateSave = false;
-      }
     }
   }
   
@@ -354,6 +364,10 @@ class StatePersistence {
    */
   destroy() {
     this.stopAutoSave();
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
     this.providers.clear();
     this.eventListeners.clear();
     this.onLog('debug', 'StatePersistence destroyed');

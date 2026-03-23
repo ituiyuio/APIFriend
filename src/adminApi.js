@@ -69,9 +69,31 @@ function createAdminRouter(options = {}) {
   router.get('/sources', (req, res) => {
     try {
       const sources = sourceManager?.getAllSources() || [];
+      
+      // 从 statsRecorder 获取按源统计的历史数据（汇总所有天数）
+      const dailyStats = statsRecorder?.getDailyStats(30) || [];
+      const allTimeBySource = {};
+      
+      for (const day of dailyStats) {
+        if (day.bySource) {
+          for (const [sourceName, sourceData] of Object.entries(day.bySource)) {
+            if (!allTimeBySource[sourceName]) {
+              allTimeBySource[sourceName] = { requests: 0, success: 0, failure: 0, tokens: 0 };
+            }
+            allTimeBySource[sourceName].requests += sourceData.requests || 0;
+            allTimeBySource[sourceName].success += sourceData.success || 0;
+            allTimeBySource[sourceName].failure += sourceData.failure || 0;
+            allTimeBySource[sourceName].tokens += sourceData.tokens || 0;
+          }
+        }
+      }
+      
       const summaries = sources.map(source => {
         const summary = sourceManager?.getSourceSummary(source.name);
         const rateLimitState = rateLimiter?.getCounts(source.name);
+        
+        // 使用 statsRecorder 的历史数据覆盖统计
+        const sourceHistory = allTimeBySource[source.name] || {};
         
         return {
           name: source.name,
@@ -79,7 +101,15 @@ function createAdminRouter(options = {}) {
           priority: source.priority,
           enabled: source.enabled,
           status: summary?.status || 'unknown',
-          stats: summary?.stats || {},
+          stats: {
+            totalRequests: sourceHistory.requests || summary?.stats?.totalRequests || 0,
+            successCount: sourceHistory.success || summary?.stats?.successCount || 0,
+            failureCount: sourceHistory.failure || summary?.stats?.failureCount || 0,
+            lastSuccess: summary?.stats?.lastSuccess || null,
+            lastFailure: summary?.stats?.lastFailure || null,
+            consecutiveFailures: summary?.stats?.consecutiveFailures || 0,
+            lastError: summary?.stats?.lastError || null
+          },
           modelMapping: source.modelMapping || {},
           modelMappingStrict: source.modelMappingStrict || false,
           rateLimit: {
@@ -410,10 +440,10 @@ function createAdminRouter(options = {}) {
   });
   
   /**
-   * PATCH /admin/sources/:name
+   * PUT/PATCH /admin/sources/:name
    * 更新源配置
    */
-  router.patch('/sources/:name', async (req, res) => {
+  const handleUpdateSource = async (req, res) => {
     try {
       const { name } = req.params;
       const updates = req.body;
@@ -475,7 +505,10 @@ function createAdminRouter(options = {}) {
         error: err.message
       });
     }
-  });
+  };
+  
+  router.put('/sources/:name', handleUpdateSource);
+  router.patch('/sources/:name', handleUpdateSource);
   
   /**
    * POST /admin/sources/:name/reset
@@ -552,6 +585,14 @@ function createAdminRouter(options = {}) {
           successCount: stats.successCount || 0,
           failureCount: stats.failureCount || 0
         });
+      }
+      
+      // 从 statsRecorder 获取历史统计（覆盖总数）
+      const statsSummary = statsRecorder?.getSummary();
+      if (statsSummary?.allTime) {
+        totalRequests = statsSummary.allTime.requests || totalRequests;
+        totalSuccess = statsSummary.allTime.success || totalSuccess;
+        totalFailure = statsSummary.allTime.failure || totalFailure;
       }
       
       // 持久化状态

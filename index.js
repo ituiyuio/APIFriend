@@ -9,7 +9,7 @@ const http = require('http');
 
 // 导入模块
 const { loadConfig, validateConfig, DEFAULT_CONFIG, watchConfig, reloadConfig } = require('./src/config');
-const { RateLimiter } = require('./src/rateLimiter');
+const { RateLimiter, rateLimiter } = require('./src/rateLimiter');
 const { SourceManager, SourceStatus } = require('./src/sourceManager');
 const { Proxy } = require('./src/proxy');
 const { FailoverDetector } = require('./src/failover');
@@ -89,9 +89,9 @@ class APIFriendApp {
       configPath: this.configPath
     });
     
-    // 3. 初始化限流器
-    this.rateLimiter = new RateLimiter();
-    this.logger.debug('RateLimiter initialized');
+    // 3. 使用限流器单例
+    this.rateLimiter = rateLimiter;
+    this.logger.debug('RateLimiter initialized (singleton)');
     
     // 4. 初始化源管理器
     this.sourceManager = new SourceManager(this.config);
