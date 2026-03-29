@@ -57,12 +57,17 @@ class ProxyService {
     const isStream = isStreamRequest(transformedBody);
 
     // 3. 重试循环
-    const maxRetries = this.failoverConfig.maxRetries || 3;
+    // retriesPerSource: 每个源重试次数（默认3次）
+    // maxSourceSwitches: 最多切换多少个源（默认3个）
+    const retriesPerSource = this.failoverConfig.retriesPerSource || 3;
+    const maxSourceSwitches = this.failoverConfig.maxSourceSwitches || 3;
     const retryDelayMs = this.failoverConfig.retryDelayMs || 1000;
+    
     let currentSource = null;
-    let retryCount = 0;
+    let sourceRetries = 0;  // 当前源的重试次数
+    let sourceSwitches = 0;  // 已切换源的次数
 
-    while (retryCount < maxRetries) {
+    while (sourceSwitches < maxSourceSwitches) {
       // 选择源
       if (!currentSource) {
         currentSource = this.sourceManager.selectSource(requestedModel);
@@ -73,6 +78,7 @@ class ProxyService {
             503
           ));
         }
+        sourceRetries = 0;  // 新源，重置重试计数
       }
 
       // 构建上游请求
@@ -133,24 +139,36 @@ class ProxyService {
           message: result.message
         });
 
-        // 认证错误不重试
+        // 认证错误：直接切换源，不重试
         if (errorType === 'auth_error') {
-          this.logger.error('Auth error, not retrying', {
+          this.logger.error('Auth error, switching source', {
             source: currentSource.source.name,
             error: result.error
           });
-          if (!res.headersSent) {
-            return res.status(result.response?.status || 502).json(formatter.formatError(
-              errorType,
-              result.message || result.error || 'Authentication failed',
-              result.response?.status || 502
-            ));
+          // 直接切换到下一个源
+        } else {
+          // 其他错误：在当前源重试
+          sourceRetries++;
+          
+          if (sourceRetries < retriesPerSource) {
+            this.logger.warn('Retrying same source', {
+              source: currentSource.source.name,
+              attempt: sourceRetries + 1,
+              maxAttempts: retriesPerSource,
+              errorType
+            });
+            
+            if (retryDelayMs > 0) {
+              await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+            }
+            continue;  // 继续用同一个源重试
           }
-          return;
         }
 
-        // 选择下一个源
+        // 当前源重试次数用完，切换到下一个源
+        sourceSwitches++;
         const nextSource = this.sourceManager.selectNextSource(currentSource.source.name, requestedModel);
+        
         if (!nextSource) {
           this.logger.error('All sources failed', { model: requestedModel });
           if (!res.headersSent) {
@@ -163,14 +181,15 @@ class ProxyService {
           return;
         }
 
-        currentSource = nextSource;
-        retryCount++;
-
-        this.logger.warn('Retrying with next source', {
+        this.logger.warn('Switching to next source', {
           from: currentSource.source.name,
-          retryCount,
-          maxRetries
+          to: nextSource.source.name,
+          sourceSwitches,
+          maxSourceSwitches
         });
+
+        currentSource = nextSource;
+        sourceRetries = 0;  // 新源，重置重试计数
 
         if (retryDelayMs > 0) {
           await new Promise(resolve => setTimeout(resolve, retryDelayMs));
@@ -182,14 +201,31 @@ class ProxyService {
           error: err.message
         });
 
-        this.logger.warn('Request error, retrying', {
-          source: currentSource.source.name,
-          error: err.message,
-          retryCount
-        });
+        sourceRetries++;
+        
+        if (sourceRetries < retriesPerSource) {
+          this.logger.warn('Request error, retrying same source', {
+            source: currentSource.source.name,
+            error: err.message,
+            attempt: sourceRetries + 1,
+            maxAttempts: retriesPerSource
+          });
+          
+          if (retryDelayMs > 0) {
+            await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+          }
+          continue;  // 继续用同一个源重试
+        }
 
+        // 当前源重试次数用完，切换到下一个源
+        sourceSwitches++;
         const nextSource = this.sourceManager.selectNextSource(currentSource.source.name, requestedModel);
+        
         if (!nextSource) {
+          this.logger.error('All sources failed after network error', {
+            source: currentSource.source.name,
+            error: err.message
+          });
           if (!res.headersSent) {
             return res.status(502).json(formatter.formatError(
               'proxy_error',
@@ -200,8 +236,15 @@ class ProxyService {
           return;
         }
 
+        this.logger.warn('Switching to next source after network error', {
+          from: currentSource.source.name,
+          to: nextSource.source.name,
+          sourceSwitches,
+          maxSourceSwitches
+        });
+
         currentSource = nextSource;
-        retryCount++;
+        sourceRetries = 0;
 
         if (retryDelayMs > 0) {
           await new Promise(resolve => setTimeout(resolve, retryDelayMs));
@@ -209,11 +252,11 @@ class ProxyService {
       }
     }
 
-    // 超过最大重试次数
+    // 超过最大源切换次数
     if (!res.headersSent) {
       return res.status(503).json(formatter.formatError(
-        'max_retries_exceeded',
-        `Failed after ${maxRetries} retries`,
+        'all_sources_failed',
+        `Failed after trying ${sourceSwitches} sources`,
         503
       ));
     }

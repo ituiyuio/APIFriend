@@ -13,9 +13,12 @@ class OpenAIFormatter extends BaseFormatter {
   }
 
   matches(req) {
-    // OpenAI 格式：/v1/chat/completions, /v1/completions, /v1/embeddings
-    const path = req.path || req.originalUrl || '';
-    return /\/v1\/(chat\/completions|completions|embeddings)/.test(path);
+    // 注意：当 router 挂载在 /v1 下时，req.path 是相对路径（如 /chat/completions）
+    // req.originalUrl 是完整路径（如 /v1/chat/completions）
+    // 需要同时支持两种情况
+    const path = req.originalUrl || req.path || '';
+    // 匹配 /v1/chat/completions 或直接 /chat/completions
+    return /(\/v1)?\/(chat\/completions|completions|embeddings)/.test(path);
   }
 
   // OpenAI 是内部标准格式，所有方法继承默认的透传行为

@@ -52,10 +52,9 @@
   ],
   "failover": {
     "timeoutMs": 15000,
-    "maxRetries": 3,
-    "retryDelayMs": 1000,
-    "cooldownMinutes": 5,
-    "failureThreshold": 3
+    "retriesPerSource": 3,
+    "maxSourceSwitches": 3,
+    "retryDelayMs": 1000
   },
   "persistence": {
     "enabled": true,

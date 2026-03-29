@@ -16,8 +16,11 @@ class AnthropicFormatter extends BaseFormatter {
   }
 
   matches(req) {
-    const path = req.path || req.originalUrl || '';
-    return /\/v1\/messages/.test(path);
+    // 注意：当 router 挂载在 /v1 下时，req.path 是相对路径（如 /messages）
+    // req.originalUrl 是完整路径（如 /v1/messages）
+    // 需要同时支持两种情况
+    const path = req.originalUrl || req.path || '';
+    return /\/v1\/messages/.test(path) || /^\/messages/.test(path);
   }
 
   getUpstreamHeaders(source, originalHeaders) {

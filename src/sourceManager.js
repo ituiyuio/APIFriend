@@ -260,16 +260,10 @@ class SourceManager extends EventEmitter {
       return false;
     }
     
-    // 检查是否禁用
+    // 只检查是否被手动禁用
+    // 不再因连续失败而自动禁用，失败时直接轮替到下一个源
     if (state.status === SourceStatus.DISABLED) {
       return false;
-    }
-    
-    // 检查是否在冷却中
-    if (state.status === SourceStatus.COOLING) {
-      if (state.cooldownUntil && Date.now() < state.cooldownUntil) {
-        return false;
-      }
     }
     
     return true;
@@ -375,10 +369,8 @@ class SourceManager extends EventEmitter {
     
     this.emit('source_failure', { name, reason, consecutiveFailures: state.stats.consecutiveFailures });
     
-    // 检查是否需要进入冷却
-    if (state.stats.consecutiveFailures >= this.failoverConfig.failureThreshold) {
-      this.enterCooldown(name);
-    }
+    // 不再自动进入冷却，失败时直接轮替到下一个源
+    // 失败统计保留用于监控和诊断
   }
 
   /**
