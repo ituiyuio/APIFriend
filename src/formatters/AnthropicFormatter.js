@@ -40,12 +40,24 @@ class AnthropicFormatter extends BaseFormatter {
   transformRequest(anthropicBody) {
     const messages = [];
 
-    // 处理 system
+    // 处理 system - 支持字符串和数组格式
     if (anthropicBody.system) {
-      messages.push({
-        role: 'system',
-        content: anthropicBody.system
-      });
+      let systemContent = '';
+      if (typeof anthropicBody.system === 'string') {
+        systemContent = anthropicBody.system;
+      } else if (Array.isArray(anthropicBody.system)) {
+        // Anthropic 多内容块格式：提取所有文本拼接
+        systemContent = anthropicBody.system
+          .filter(block => block.type === 'text')
+          .map(block => block.text)
+          .join('\n');
+      }
+      if (systemContent) {
+        messages.push({
+          role: 'system',
+          content: systemContent
+        });
+      }
     }
 
     // 处理 messages
@@ -97,16 +109,8 @@ class AnthropicFormatter extends BaseFormatter {
     const toolResults = content.filter(c => c.type === 'tool_result');
     const toolUses = content.filter(c => c.type === 'tool_use');
 
-    // 文本内容
-    if (textParts.length > 0) {
-      const textContent = textParts.map(c => c.text).join('\n');
-      messages.push({
-        role: msg.role,
-        content: textContent
-      });
-    }
-
     // 工具结果 (Anthropic: tool_result → OpenAI: tool role)
+    // 注意：tool_result 必须单独处理，不能与文本混合
     for (const result of toolResults) {
       let resultContent = result.content;
       if (typeof resultContent === 'object') {
@@ -120,6 +124,7 @@ class AnthropicFormatter extends BaseFormatter {
     }
 
     // 工具使用 (Anthropic: tool_use in assistant → OpenAI: tool_calls)
+    // 注意：如果同时有 text 和 tool_use，合并到同一个 assistant 消息中
     if (toolUses.length > 0 && msg.role === 'assistant') {
       const toolCalls = toolUses.map(tu => ({
         id: tu.id,
@@ -136,6 +141,16 @@ class AnthropicFormatter extends BaseFormatter {
         tool_calls: toolCalls
       };
       messages.push(assistantMsg);
+      return; // 已处理，不再单独添加文本消息
+    }
+
+    // 纯文本内容（只有在没有 tool_use 时才添加）
+    if (textParts.length > 0 && toolUses.length === 0) {
+      const textContent = textParts.map(c => c.text).join('\n');
+      messages.push({
+        role: msg.role,
+        content: textContent
+      });
     }
   }
 
